@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 4 of 6. 15,104 real half-hours of the Elec2 electricity market replayed forward in your browser under eight retrain policies. Weekly refits buy 4.85 points over never retraining for 130 retrains; an alarm buys 4.08 for 6; retraining before every prediction is worse than having no model at all.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="The retrain-policy bench - learn ml production with phoebe">
+<meta property="og:description" content="Session 4 of 6. Same model, same real rows, eight policies for when to refit it. Two numbers on every run: accuracy and what the retraining cost.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/courses/04-the-retrain-policy-bench.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The retrain-policy bench - learn ml production with phoebe">
+<meta name="twitter:description" content="Session 4 of 6. Eight retrain policies on real Elec2 rows, replayed live.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 4 · The retrain-policy bench - learn ml production with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-ml-production-with-phoebe</a> / Session 4 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ML in Production: The Leader Cut · Session 4 of 6</div>
+    <h1>The retrain-policy <span class="accent">bench</span></h1>
+    <p class="sub">"How often should we retrain?" gets asked in every production review and answered with a habit: nightly because the pipeline can, monthly because that is the reporting cycle, never because nobody owns it. Tonight the habit is replaced by a measurement. Two and a half years of a real electricity market, 15,104 half-hour rows, are replayed forward in your browser, one prediction at a time. The model never changes. The policy for refitting it does: never, on three schedules, on an alarm, on recent data only, and before every single prediction. Every run prints two numbers, the accuracy it bought and the retraining it cost, because a retrain policy is a spending decision before it is a technical one.</p>
+    <div class="chip-row">
+      <span class="chip level">🔴 Bench night</span>
+      <span class="chip audience">Leaders: read the two numbers</span>
+      <span class="chip audience">Builders: read the replay</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:3">3-14 · How the replay works</span>
+      <span class="a3" style="flex:6">14-40 · The eight policies, in order</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Session 3 chose how the model goes out. This session decides what happens after it has gone out and the world keeps moving. The data is Elec2, the New South Wales electricity market from May 1996 to December 1998, the most used concept-drift benchmark there is. Each row is a half-hour; the label says whether the price went UP or DOWN against its own average over the last 24 hours. Prices, demand and the flow of power from Victoria all shift over the period, and a model trained on the first four weeks meets a market it has never seen. That is the production problem in miniature, on rows nobody invented.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">measured = computed from the real rows</span>
+      <span class="pill">set by you = the dollar cost of one retrain</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> The measured price of retraining freshness on a real drifting stream, the two-number habit (accuracy and spend, never one without the other), the reason "retrain more often" has a floor below which it makes things worse, and a label-delay test that tells you when the right production decision is no model at all.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers what the replay does</span>
+      <h2>One model, one stream, eight policies</h2>
+      <span class="tag concept">8 min live</span>
+    </div>
+    <p class="lede">A replay is the honest way to test a retrain policy: walk the rows in time order, predict each one with whatever model the policy has in service at that moment, and only let the policy use a label once that label would really have arrived. Nothing from the future leaks backwards. The figure is the whole machine.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The replay drawn as a time rail of real rows. The first four weeks train the first model. At the current row the model in service predicts UP or DOWN. Labels for recent rows have not arrived yet: the label delay gap. Two triggers can call a refit: a schedule every K rows, or an alarm when rolling accuracy on labelled rows falls below where it started. A refit uses either all labelled history or only the most recent weeks.">
+        <defs>
+          <filter id="s4aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="41" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s4aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <pattern id="s4aHt" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#9A5B00" stroke-width="1" opacity=".6"/></pattern>
+          <marker id="s4aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s4aH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s4aL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s4aS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s4aB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s4aV { font: 800 12px Inter, sans-serif; fill: #6B2049; }
+          .s4aN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s4aH" x="30" y="26">THE REPLAY: PREDICT WITH WHAT IS IN SERVICE, LEARN ONLY FROM LABELS THAT HAVE ARRIVED</text>
+
+        <g filter="url(#s4aSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- the rail of rows -->
+          <rect x="40" y="150" width="100" height="30" rx="4" transform="rotate(-0.4 90 165)" fill="#FBEFF5"/>
+          <rect x="140" y="150" width="440" height="30" rx="4" transform="rotate(0.2 360 165)" fill="url(#s4aHc)"/>
+          <rect x="580" y="150" width="90" height="30" rx="4" transform="rotate(-0.3 625 165)" fill="url(#s4aHt)" stroke="#9A5B00"/>
+          <rect x="670" y="150" width="150" height="30" rx="4" transform="rotate(0.3 745 165)" fill="#FFFFFF" stroke-dasharray="5 5"/>
+          <!-- the now marker -->
+          <path d="M670 138 L670 196" stroke="#6B2049" stroke-width="3"/>
+          <!-- schedule trigger: a tick ruler -->
+          <path d="M160 92 L420 92 M160 84 L160 100 M225 84 L225 100 M290 84 L290 100 M355 84 L355 100 M420 84 L420 100" stroke="#6A4B5C"/>
+          <!-- alarm trigger: rolling accuracy dips below its start line -->
+          <path d="M470 70 L600 70" stroke="#6A4B5C" stroke-dasharray="4 4"/>
+          <path d="M470 66 C490 62 505 72 520 70 C540 68 552 88 566 96 C578 104 590 98 600 100" stroke="#A23B72"/>
+          <circle cx="592" cy="99" r="5" fill="#A23B72"/>
+          <!-- arrows to the refit -->
+          <path d="M420 108 C470 124 560 126 648 138" marker-end="url(#s4aAr)"/>
+          <path d="M600 108 C616 116 630 124 652 136" marker-end="url(#s4aAr)"/>
+          <!-- window brackets -->
+          <path d="M40 206 L40 214 L580 214 L580 206" stroke="#6B2049"/>
+          <path d="M400 238 L400 246 L580 246 L580 238" stroke="#6B2049"/>
+          <!-- refit box -->
+          <rect x="690" y="222" width="150" height="46" rx="8" transform="rotate(0.6 765 245)" fill="#FBEFF5"/>
+          <path d="M580 250 C620 262 650 258 686 248" marker-end="url(#s4aAr)"/>
+        </g>
+
+        <text class="s4aL" x="90" y="142" text-anchor="middle">first 4 weeks</text>
+        <text class="s4aS" x="90" y="196" text-anchor="middle">train model 1</text>
+        <text class="s4aL" x="360" y="142" text-anchor="middle">labelled rows: prediction vs truth known</text>
+                <text class="s4aB" x="612" y="198" text-anchor="middle">delay D: no label yet</text>
+        <text class="s4aV" x="676" y="132">row t: predict UP or DOWN</text>
+        <text class="s4aS" x="760" y="196" text-anchor="middle">the future: unseen</text>
+
+        <text class="s4aL" x="160" y="72">Trigger 1: a schedule</text>
+        <text class="s4aS" x="160" y="118">refit every K rows, whatever happened</text>
+        <text class="s4aL" x="470" y="52">Trigger 2: an alarm</text>
+        <text class="s4aS" x="610" y="74">start level</text>
+        <text class="s4aS" x="610" y="104">falls theta below: fire</text>
+
+        <text class="s4aS" x="46" y="230">refit window A: all labelled history</text>
+        <text class="s4aS" x="404" y="262">window B: recent weeks only</text>
+        <text class="s4aL" x="765" y="242" text-anchor="middle">refit 9 weights</text>
+        <text class="s4aS" x="765" y="258" text-anchor="middle">on the chosen window</text>
+
+        <text class="s4aN" x="30" y="298">Three dials decide every policy: what triggers a refit, which labelled rows it learns from, and how late the labels arrive.</text>
+        <text class="s4aN" x="30" y="318">The model, the rows and the scoring never change between runs, so any difference in the two numbers is the policy.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the ochre gap is the label delay, and it is the dial most retrain debates forget exists</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>The model is deliberately boring, and that is the point<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Nine inputs: a constant, the New South Wales price and demand, the Victoria price and demand, the scheduled transfer between the two states, the time of day as a point on a circle, and a weekend flag. One linear score, fitted by ridge least squares; a score above zero means UP. There is no feature engineering, no tuning and no clever architecture, and there should not be. A retrain policy is a decision about a model you already have in production. If the model changed between runs you could not tell whether a better number came from the policy or from the model.</p>
+        <p>The first model learns from the first four weeks, 448 rows. Every run is then scored on the same 14,656 rows that follow, from June 1996 to December 1998. The floor for reference, always answering DOWN because DOWN is the more common label, scores 57.72 percent.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>The two numbers, and why neither is allowed alone<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Accuracy</strong> is the share of the 14,656 rows the policy's model called right. It is measured: the same rows, the same labels, counted.</p>
+        <p><strong>Retrain spend</strong> is the number of refits times a dollar figure you set, $500 by default. That $500 is not a fact about anybody's cloud bill; it stands for the whole cost of one retrain in production, which is rarely the compute. It is the validation run, the review, the change ticket, the canary from session 3, and the on-call risk of shipping a new model on a Friday. Set it to what one retrain costs your team and every spend figure on the page moves with it. The accuracy column never does.</p>
+        <p>Read them as a pair. A policy that gains a point and a half for $65,000 and a policy that gains four points for $3,000 are not "both better than never". One of them is a bargain and one of them is a habit.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>How the sample was made, and what that does to one baseline<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The full Elec2 file on OpenML has 45,312 rows, one per half-hour from 7 May 1996 to 5 December 1998. The bench keeps every third row, in time order, which gives 15,104 rows one and a half hours apart: 16 a day, 112 a week. Each input, already scaled between 0 and 1 by OpenML, is rounded to one of 256 levels. Nothing is shuffled, so the drift is exactly where the market put it.</p>
+        <p>One thing the thinning changes, and it matters for Part 3. On the full file, a rule that simply repeats the previous half-hour's label scores 85.3 percent, a figure Žliobaitė published in 2013 and that this build reproduces at 85.33 percent. On the bench, the "previous row" is an hour and a half earlier, so the same rule scores 74.63 percent. The model runs are not flattered or penalised by the thinning in the same way, which is why the page quotes the bench's own no-model number and never the 85.3.</p>
+        <p>One more real quirk: the Victoria price, Victoria demand and transfer columns hold a single constant value for roughly the first year, because they were missing and were filled in before the file was published. They start moving in May 1997. The chart on the bench marks the date. A model trained before then has learned nothing about three of its nine inputs, which is a very ordinary way for production data to change under a model.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="bench">
+    <div class="section-kicker">
+      <span class="klabel">Build-along · the bench</span>
+      <h2>Eight policies, replayed in front of you</h2>
+      <span class="tag demo">★ 26 min · the main event</span>
+    </div>
+    <p class="lede">Work down the eight in order, with the label delay on one day and the cost on $500. For each, read the verdict line, then the two numbers, then the chart: the raspberry line is the selected policy, the dashed grey line is never retraining, the dotted ochre line is no model at all. The ticks under the chart are the retrains. The last card is the anti-lever: the freshest possible model, and the bench shows what freshness costs when it is bought on too few rows.</p>
+
+    <div id="rtp-bench" class="mb-wrap" data-live-bench></div>
+
+    <div class="callout tip">
+      <p><strong>Then change one dial at a time.</strong> Move the label delay to 1.5 hours and read the ladder table again: the no-model rule jumps to the top. Move it to one week and watch which policies barely notice. Then set the cost to what one retrain really costs your team, and read the spend column as a budget line.</p>
+    </div>
+
+    <div class="wyb">
+      <span class="wyb-pill">What you would build</span>
+      <p>The bench is a replay harness, and every team that owns a model in production should have one for its own stream. The shape is small: a time-ordered table of rows with the timestamp at which each label actually arrived, a function that trains your real model on a window, and a loop that walks forward, predicts with whatever is in service, and lets a policy object decide when to refit. Score the policy on the rows it had not seen, count the refits, and store both numbers next to the policy's name.</p>
+      <div class="prompt-box good"><span class="label">★ The policy, written as data</span>policy = {
+    "trigger":  "schedule",      # or "alarm", "never"
+    "every":    "4 weeks",       # schedule only
+    "window":   "all history",   # which labelled rows a refit uses
+    "alarm":    None,            # e.g. {"metric": "accuracy", "window": "4 weeks", "drop_pts": 10}
+    "label_delay": "1 day",      # measured from your own label pipeline, not assumed
+}
+# replay(policy, rows) -&gt; {"accuracy": ..., "retrains": ...}
+# Review it like a budget line: accuracy bought, retrains spent.</div>
+      <p>The tooling that runs the chosen policy, the scheduler, the registry and the deploy script, is a DataOps job; <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b6-model-deploy-monitor.html">DataOps session b6 ↗</a> builds it. This page is about choosing the policy it runs.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers what the ladder finds</span>
+      <h2>Freshness has a price and a floor</h2>
+      <span class="tag concept">8 min live</span>
+    </div>
+    <p class="lede">These are the numbers the bench prints at a one-day label delay and $500 a retrain, written down so they can be argued with after class. Put the retrain count on one axis and accuracy on the other and the eight policies stop being a list and become a frontier.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 390" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Accuracy against the number of retrains, retrains on a log scale. No model 65.35 percent with 0 retrains. Never retrain 68.70 percent with 0. Alarm 72.78 percent with 6. Every 13 weeks 72.44 percent with 10. Every 4 weeks 73.11 percent with 32. Weekly 73.55 percent with 130. Daily 73.55 percent with 915. Weekly on recent weeks only 69.88 percent with 130. Every step on 12 hours 61.91 percent with 14,655 retrains.">
+        <defs>
+          <filter id="s4bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="47" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s4bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s4bH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s4bL { font: 600 11.5px Inter, sans-serif; fill: #2A1621; }
+          .s4bS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s4bB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s4bA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s4bR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s4bN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s4bH" x="30" y="26">WHAT EACH POLICY BOUGHT, AND WHAT IT SPENT</text>
+        <text class="s4bS" x="380" y="26">label delay 1 day · 14,656 scored rows · retrains on a log scale</text>
+
+        <g filter="url(#s4bSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M90 300 L830 300 M90 300 L90 44" stroke="#6A4B5C" stroke-width="1.5"/>
+          <path d="M90 159 L830 159" stroke="#E2CBD7" stroke-width="1.2" stroke-dasharray="3 5"/>
+          <!-- the frontier -->
+          <path d="M100 159 L267 92 L376 87 L467 80 L594 80" stroke="#A23B72" stroke-dasharray="6 4"/>
+          <circle cx="100" cy="213" r="6" fill="#9A5B00" stroke="#9A5B00"/>
+          <circle cx="100" cy="159" r="6" fill="#FFFFFF"/>
+          <circle cx="267" cy="92" r="6" fill="#A23B72" stroke="#A23B72"/>
+          <circle cx="300" cy="98" r="6" fill="#FFFFFF"/>
+          <circle cx="376" cy="87" r="6" fill="#FFFFFF"/>
+          <circle cx="467" cy="80" r="6" fill="#FFFFFF"/>
+          <circle cx="594" cy="80" r="6" fill="#FFFFFF"/>
+          <circle cx="467" cy="140" r="6" fill="#FEF2F2" stroke="#991B1B"/>
+          <circle cx="775" cy="269" r="6" fill="#FEF2F2" stroke="#991B1B"/>
+          <path d="M467 90 L467 128" stroke="#991B1B" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#s4bAr)"/>
+        </g>
+
+        <text class="s4bS" x="80" y="304" text-anchor="end">60%</text>
+        <text class="s4bS" x="80" y="239" text-anchor="end">64%</text>
+        <text class="s4bS" x="80" y="174" text-anchor="end">68%</text>
+        <text class="s4bS" x="80" y="109" text-anchor="end">72%</text>
+        <text class="s4bS" x="80" y="44" text-anchor="end">76%</text>
+        <text class="s4bS" x="100" y="318" text-anchor="middle">0</text>
+        <text class="s4bS" x="150" y="318" text-anchor="middle">1</text>
+        <text class="s4bS" x="300" y="318" text-anchor="middle">10</text>
+        <text class="s4bS" x="450" y="318" text-anchor="middle">100</text>
+        <text class="s4bS" x="600" y="318" text-anchor="middle">1,000</text>
+        <text class="s4bS" x="750" y="318" text-anchor="middle">10,000</text>
+        <text class="s4bA" x="455" y="340" text-anchor="middle">retrains over the replay (log scale; 0 plotted at the far left)</text>
+
+        <text class="s4bB" x="112" y="217">No model · 65.35%</text>
+        <text class="s4bL" x="112" y="176">Never retrain · 68.70%</text>
+        <text class="s4bA" x="257" y="74" text-anchor="end">Alarm · 6 retrains · 72.78%</text>
+        <text class="s4bL" x="312" y="118">13 weeks · 10 · 72.44%</text>
+        <text class="s4bL" x="376" y="72" text-anchor="middle">4 weeks · 32 · 73.11%</text>
+        <text class="s4bL" x="467" y="54" text-anchor="middle">Weekly · 130 · 73.55%</text>
+        <text class="s4bL" x="604" y="72">Daily · 915 · 73.55%</text>
+        <text class="s4bR" x="477" y="165">Weekly, recent only · 130 · 69.88%</text>
+        <text class="s4bR" x="765" y="253" text-anchor="end">Every step, 12 hours · 14,655 · 61.91%</text>
+
+        <text class="s4bN" x="30" y="366">The dashed line is the frontier. Daily: 915 retrains, weekly: 130, the same 10,779 rows right. Red points spend like weekly or worse.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - most of the gain arrives with the first handful of retrains; after that you are paying for the habit</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Finding 1: never retraining is the most expensive free policy<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Never retrain costs nothing and scores 68.70 percent. Refitting on all history once a quarter, ten retrains, scores 72.44 percent: 3.75 points for $5,000, about $1,335 a point. The line under the chart shows where the gap opens. Select "Every week" and it reports a best four-week lead of +14.5 points over never retraining, in the four weeks from 19 Nov 1996, six months after launch. That slow slide is what drift looks like from the inside: no alert fired, no pipeline broke, and an uptime dashboard would have shown a healthy model. The same line keeps it honest in the other direction too. The weekly run's worst block, 58.5 percent from 10 Feb 1998, is as bad as never retraining's worst, and in the four weeks from 30 Jun 1998 never retraining beats it by 2.9 points. Retraining raises the average; it does not buy immunity from bad months.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Finding 2: the first few retrains buy almost everything<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Ten retrains a quarter apart: 72.44. Thirty-two, every four weeks: 73.11. One hundred and thirty, weekly: 73.55. Nine hundred and fifteen, daily: 73.55 again, to the row, 10,779 correct in both. Going from weekly to daily multiplies the retrain bill by seven and buys nothing. On the bench's printed rate, the quarterly policy pays about $1,335 per accuracy point over never, monthly about $3,624, weekly about $13,399.</p>
+        <p>The alarm policy sits on the knee of the curve: 6 retrains, 72.78 percent, about $735 a point. It refits only when four-week accuracy on labelled rows has fallen 10 points below where that model started. It is not the most accurate policy on the page. It is the cheapest accuracy on the page, which is usually the more useful sentence in a budget meeting.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Finding 3: fresh data is not the same as enough data<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>"Weekly, recent only" retrains exactly as often as "weekly" and spends exactly the same $65,000. The one difference is the refit window: the last four weeks of labels instead of everything labelled so far. It scores 69.88 percent: +1.18 points over never retraining, against +4.85 for the all-history weekly run on the same schedule. On this stream, most of what retraining buys is more data, not newer data. That is a finding about this model on this market, not a law: a stream whose old regime is actively wrong, a fraud pattern that has been shut down, a product that no longer exists, would reward the recent window instead. Which is why the window is a dial on the bench and not a default in the policy.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>The anti-lever: retrain before every prediction<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The freshest model money can buy: refit before every one of the 14,656 predictions, on the last eight labelled rows, the last twelve hours. It retrains 14,655 times, $7,327,500 at the default rate, and scores 61.91 percent. That is 6.78 points below never retraining and 3.43 points below having no model at all.</p>
+        <p>The mechanism is arithmetic, not bad luck. Eight rows cannot pin down nine weights; the ridge penalty keeps the solve from blowing up, but what it learns is whatever the last twelve hours happened to look like. Every refit is a fresh overreaction. "Retrain as often as the pipeline allows" sounds like diligence and is, on a small window, a way of paying to replace a model with noise.</p>
+        <p>Keep the nuance honest. Move the label delay to 1.5 hours and the same policy scores 69.45 percent, slightly above never retraining, because a model refitted on the last twelve hours with labels one row old is partly just copying the last label. Žliobaitė showed in 2013 that on this dataset even a detector firing at random lifts accuracy for exactly that reason. A frantic policy can look good on a stream whose labels are sticky. That is a reason to compare every policy against the no-model rule, which is Part 3.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers the no-model rung and label delay</span>
+      <h2>When the right policy is no model</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">The first rung on the bench has no model in it. It predicts that the next half-hour will do whatever the last known half-hour did. It needs no training, no serving stack, no monitoring and no retrains. Whether it wins depends entirely on one number most teams never measure: how late the labels arrive.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three panels, one per label delay. Labels 1.5 hours late: no model 74.63 percent, weekly retrain 73.51 percent, no model wins. Labels 1 day late: no model 65.35 percent, weekly retrain 73.55 percent. Labels 1 week late: no model 65.80 percent, weekly retrain 73.30 percent. Under each panel, the no-model rule copies the label from 1, 16 or 112 rows back.">
+        <defs>
+          <filter id="s4cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="53" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s4cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s4cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s4cH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s4cL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s4cS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s4cB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s4cV { font: 800 12px Inter, sans-serif; fill: #6B2049; }
+          .s4cN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s4cH" x="30" y="26">THE SAME TWO RUNGS AT THREE LABEL DELAYS</text>
+        <text class="s4cS" x="340" y="26">bars start at 50 percent · ochre = no model, hatched = weekly refit on all history</text>
+
+        <g filter="url(#s4cSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="48" width="260" height="190" rx="10" transform="rotate(-0.4 170 143)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="310" y="48" width="260" height="190" rx="10" transform="rotate(0.3 440 143)" fill="#FFFFFF"/>
+          <rect x="580" y="48" width="260" height="190" rx="10" transform="rotate(-0.3 710 143)" fill="#FFFFFF"/>
+          <!-- bars: 7 px per point above 50 -->
+          <rect x="60" y="92" width="172" height="24" rx="3" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="60" y="130" width="165" height="24" rx="3" fill="url(#s4cHc)"/>
+          <rect x="330" y="92" width="107" height="24" rx="3" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="330" y="130" width="165" height="24" rx="3" fill="url(#s4cHc)"/>
+          <rect x="600" y="92" width="111" height="24" rx="3" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="600" y="130" width="163" height="24" rx="3" fill="url(#s4cHc)"/>
+          <!-- the copy arrows -->
+          <path d="M100 198 L76 198" marker-end="url(#s4cAr)"/>
+          <path d="M470 198 L346 198" marker-end="url(#s4cAr)"/>
+          <path d="M820 198 L616 198" marker-end="url(#s4cAr)"/>
+          <path d="M60 206 L60 190 M100 206 L100 190 M330 206 L330 190 M470 206 L470 190 M600 206 L600 190 M820 206 L820 190" stroke="#6A4B5C"/>
+        </g>
+
+        <text class="s4cL" x="60" y="76">Labels 1.5 hours late</text>
+        <text class="s4cL" x="330" y="76">Labels 1 day late</text>
+        <text class="s4cL" x="600" y="76">Labels 1 week late</text>
+        <text class="s4cB" x="240" y="109">74.63%</text>
+        <text class="s4cV" x="233" y="147">73.51%</text>
+        <text class="s4cB" x="445" y="109">65.35%</text>
+        <text class="s4cV" x="503" y="147">73.55%</text>
+        <text class="s4cB" x="719" y="109">65.80%</text>
+        <text class="s4cV" x="771" y="147">73.30%</text>
+        <text class="s4cS" x="60" y="178">copies the label from 1 row back</text>
+        <text class="s4cS" x="330" y="178">copies the label from 16 rows back</text>
+        <text class="s4cS" x="600" y="178">copies the label from 112 rows back</text>
+        <text class="s4cB" x="60" y="226">no model wins</text>
+        <text class="s4cV" x="330" y="226">the model earns its place</text>
+        <text class="s4cV" x="600" y="226">the model earns its place</text>
+
+        <text class="s4cN" x="30" y="270">With fresh labels the market's own stickiness beats a nine-input model. A day of delay makes the last label stale, and the model</text>
+        <text class="s4cN" x="30" y="288">is worth 8.20 points. The week-late rule does a little better than the day-late one because it copies the same half-hour last week.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - label delay decides whether you need a model before anyone argues about which model</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Label delay is a production fact, not a modelling detail<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>At a 1.5-hour delay the no-model rule scores 74.63 percent and beats every one of the seven model policies, the best of which, weekly on all history, reaches 73.51. Every dollar spent on training, serving and retraining that model buys a worse answer than a one-line rule. At a one-day delay the same rule falls to 65.35 percent and the weekly model beats it by 8.20 points.</p>
+        <p>The market did not change between those two runs. What changed is when the truth arrives, and that is decided by the business process around the model: how long until a loan defaults, a parcel is returned, a claim is settled, a price is published. Before a team argues about retrain schedules it should be able to answer, with a measured number, "how long after a prediction do we find out whether it was right?" Session 5 builds monitoring on that same number, because an alarm on accuracy can only look at rows whose labels have arrived.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What the alarm cannot see, and why it still won on cost<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The alarm watches accuracy on the last four weeks of labelled rows. With labels a week late it is always looking at a window that ended a week ago, and it still scores 72.61 percent on 6 retrains against 72.78 at a one-day delay. That robustness is a property of this stream, which drifts over months rather than hours, and it would not survive a stream that breaks overnight.</p>
+        <p>Alarm tuning is also less smooth than the headline suggests. On the bench, a 5-point drop threshold fires 8 times and scores 71.38 percent, below the 10-point alarm's 72.78 on 6. Fewer alarms did better because of when they fired, not how many. An alarm is a timing decision, and one good run of one threshold is not a tuning result. Try the thresholds yourself before quoting any of them.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Elec2 is where the concept-drift field learned this the hard way.</strong> Harries published the dataset in 1999 and it became the standard test for adaptive classifiers. In 2013 Indrė Žliobaitė pointed out that the labels are so autocorrelated that the "same as last time" rule scores 85.3 percent on the full file, above most of the adaptive methods then being published on it, and that a change detector firing at random improves accuracy on it. Her recommendation was to compare every result against that rule. The production translation is the no-model rung: before any model ships, the team writes down the simplest rule a clerk could run, and the model has to beat it at the label delay the business really has.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 5</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Price one retrain on your own team.</strong> List every step between "a new model is trained" and "it is serving": validation, review, sign-off, canary, rollback plan, on-call. Put a number of hours on each and turn it into dollars. Put that figure in the bench's cost box and read the ladder again.</li>
+      <li><strong>Measure your label delay.</strong> For one model you own, how long after a prediction does the true outcome land in a table you can query? Median and 90th percentile. If nobody can answer, that is the first finding.</li>
+      <li><strong>Write your no-model rule.</strong> One sentence a clerk could run with no training. Estimate or measure its accuracy at your real label delay, and write down the gap your model has to clear.</li>
+      <li><strong>Find the knee.</strong> On the bench, try three alarm thresholds and two refit windows of your choice. Bring the one policy you would defend, with its two numbers, to session 5.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 4 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · At a one-day label delay, weekly and daily refits on all history both score 73.55 percent. What should a leader take from that?</p>
+      <button class="qopt" type="button">A · Daily is safer, so pay for it anyway in case the market speeds up</button>
+      <button class="qopt" type="button">B · The bench is broken, because more retraining must always help</button>
+      <button class="qopt" type="button">C · Daily's 915 retrains buy exactly zero more correct rows than weekly's 130 on this stream; the retrain cadence has a point past which it is pure spend, and the policy should sit at or below it</button>
+      <button class="qopt" type="button">D · Weekly is the right cadence for every model in production</button>
+      <p class="qwhy">Both runs call 10,779 of the 14,656 rows right. Freshness has diminishing returns, and past the knee a faster schedule multiplies cost without moving accuracy. D generalises one stream to all of them; the knee has to be found on your own replay.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="1">
+      <p class="qtext">2 · Retraining before every prediction on the last twelve hours scores 61.91 percent at a one-day delay, below never retraining. Why?</p>
+      <button class="qopt" type="button">A · The model is too complex for the data</button>
+      <button class="qopt" type="button">B · Eight labelled rows cannot pin down nine weights, so every refit learns the noise of the last twelve hours; maximum freshness on a tiny window is overreaction, bought 14,655 times</button>
+      <button class="qopt" type="button">C · The label delay means it never retrains at all</button>
+      <button class="qopt" type="button">D · Electricity prices are random, so no policy can do better than chance</button>
+      <p class="qwhy">The window is too small for the model, and refitting constantly replaces a reasonable model with a string of overfitted ones. D is contradicted by the bench itself: several policies clear 72 percent.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">3 · With labels arriving 1.5 hours late, the no-model rule beats every model policy on the bench. What does that change in a production decision?</p>
+      <button class="qopt" type="button">A · If the business really gets its labels that fast, the simple rule is the better product: ship the rule, and make any model prove it beats that rule at the real label delay before it earns a serving stack</button>
+      <button class="qopt" type="button">B · Nothing; models are always better than rules once retrained often enough</button>
+      <button class="qopt" type="button">C · The team should slow its label pipeline down so the model looks better</button>
+      <button class="qopt" type="button">D · Accuracy is the wrong metric, so the comparison does not count</button>
+      <p class="qwhy">Label delay is part of the problem definition. The no-model rung is the baseline every model has to clear, and on a sticky stream with fast labels it is hard to clear. Session 6 turns this into the kill decision.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Elec2, Harries 1999, via OpenML dataset 151 "electricity"</span><span class="note">45,312 rows, 7 May 1996 to 5 December 1998, UP or DOWN against a 24-hour moving average; downloaded without login and replayed here. Every accuracy and retrain count on the page is computed from it, and a Python reference matches the browser engine row for row</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Žliobaitė 2013, "How good is the Electricity benchmark for evaluating concept drift adaptation"</span><span class="note">Read at source on arXiv: the 85.3 percent "moving average of one" and the random-alarm finding. The 85.33 percent is reproduced on the full file in this build</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Retraining cadence and data freshness as a decision</span><span class="note">Zinkevich, Rules of Machine Learning, on knowing your system's freshness requirements; the cadence and window trade-offs are measured on the bench rather than asserted</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Stateless retraining versus continual training</span><span class="note">Huyen, Designing Machine Learning Systems, 2022; reported. The bench only refits from scratch on a window, and says so</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Drift detection metrics and continuous evaluation</span><span class="note">Not taught here. The alarm uses plain rolling accuracy; the statistics of drift detection live in Model Evaluation session b9</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 4 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Two numbers, always</b><span>Accuracy bought and retrains spent. One without the other is a habit, not a policy.</span></div>
+      <div class="cheat-item"><b>Price a retrain in full</b><span>Validation, review, canary, rollback, on-call. The compute is the small part.</span></div>
+      <div class="cheat-item"><b>Find the knee</b><span>On Elec2: 6 alarm retrains buy 72.78; weekly buys 73.55; daily buys the same 73.55.</span></div>
+      <div class="cheat-item"><b>Window before cadence</b><span>Same 130 retrains: all history 73.55, last four weeks 69.88.</span></div>
+      <div class="cheat-item"><b>Tiny window, every step = worse</b><span>14,655 refits on 8 rows: 61.91, below never (68.70) and below no model (65.35).</span></div>
+      <div class="cheat-item"><b>Measure the label delay</b><span>At 1.5 hours no model wins (74.63). At 1 day the model wins by 8.20 points.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>The alarm policy was the cheapest accuracy on the bench, and it was only as good as the thing it watched. Session 5 is monitoring as a decision: what to watch when labels are late, which signals you will actually act on, what each alert is wired to do, and the feedback loops that let a model quietly grade its own homework.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 4 of 6 · learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="03-shadow-canary-or-all-at-once.html">← Prev: Shadow, canary, or all at once</a> &nbsp;·&nbsp; <a href="05-monitor-what-you-will-act-on.html">Next: Monitor what you will act on →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/elec-sample.js?v=1"></script>
+<script src="../assets/elec-live.js?v=2"></script>
+<script src="../assets/app.js?v=2"></script>
+</body>
+</html>

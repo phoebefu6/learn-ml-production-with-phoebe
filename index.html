@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Six sessions on the decisions of taking machine learning to production: scoping and the baseline, choosing a rollout pattern, the retrain policy and its economics, monitoring you will act on, and when not to productionize at all. A retrain-policy bench replays 15,104 real electricity-market rows in your browser. Free, by Phoebe Fu.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="ML in Production: The Leader Cut">
+<meta property="og:description" content="The launch is the middle of an ML project. Six sessions on the decisions after it, and a bench where weekly retraining buys 4.85 points for 130 retrains and an alarm buys 4.08 for 6.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ML in Production: The Leader Cut">
+<meta name="twitter:description" content="Scoping, rollout, retrain policy, monitoring and the kill decision, with a live retrain bench on real Elec2 rows.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>ML in Production: The Leader Cut</title>
+<link rel="stylesheet" href="assets/style.css?v=3">
+<style>
+
+  .stats-row { display: flex; gap: 2.4rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 2.1rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: .72rem; opacity: .85; text-transform: uppercase; letter-spacing: .09em; font-weight: 600; }
+
+  .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .course-card {
+    border: 1px solid var(--hairline);
+    border-top: 4px solid var(--diff, var(--indigo));
+    border-radius: var(--radius);
+    padding: 1.2rem 1.3rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    text-decoration: none;
+    color: var(--ink);
+    background: #fff;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease;
+    position: relative;
+  }
+  .course-card:hover { border-color: var(--indigo-soft); border-top-color: var(--diff, var(--indigo)); box-shadow: 0 8px 28px rgba(var(--shadow-rgb),.16); transform: translateY(-3px); }
+  .course-card .cicon { font-size: 1.7rem; line-height: 1; }
+  .course-card .cnum { font-size: .72rem; font-weight: 700; color: var(--indigo); text-transform: uppercase; letter-spacing: .1em; }
+  .course-card h3 { font-size: 1.05rem; font-weight: 800; line-height: 1.3; }
+  .course-card p { font-size: .85rem; color: var(--muted); flex: 1; }
+  .course-card .meta { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+  .diff-legend { display: flex; gap: 1rem; margin-top: 1.6rem; font-size: .74rem; color: var(--muted); font-weight: 600; flex-wrap: wrap; }
+  .diff-legend i { display: inline-block; width: .85rem; height: .35rem; border-radius: 999px; margin-right: .35rem; vertical-align: middle; }
+
+  .paths { margin-top: 2.6rem; }
+  .paths h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: .3rem; }
+  .paths .plede { color: var(--muted); font-size: .92rem; margin-bottom: .8rem; }
+  .path { display: flex; gap: .55rem; align-items: center; padding: .75rem 0; border-bottom: .5px solid var(--hairline); flex-wrap: wrap; }
+  .path:last-child { border-bottom: none; }
+  .path b { min-width: 15.5rem; font-size: .9rem; }
+  .path .pstep { background: var(--indigo-50); color: var(--indigo); border-radius: 999px; padding: .16rem .68rem; font-weight: 700; font-size: .8rem; text-decoration: none; transition: all .12s ease; }
+  .path .pstep:hover { background: var(--indigo); color: #fff; }
+  .path .parr { color: var(--muted); font-weight: 700; }
+
+  .mm-section { margin-top: 1.6rem; }
+  .mm-section h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: .2rem; }
+  .mm-section .mm-lede { color: var(--muted); font-size: .92rem; margin-bottom: .4rem; }
+  .mm-wrap { border: 1px solid var(--hairline); border-radius: var(--radius); background: linear-gradient(180deg,#fff,var(--indigo-50)); padding: .6rem; overflow-x: auto; }
+  .mm-svg { width: 100%; height: auto; display: block; max-width: 60rem; margin: 0 auto; min-width: 34rem; }
+  .mm-link { cursor: pointer; text-decoration: none; }
+  .mm-node rect { transition: opacity .15s ease, filter .15s ease; }
+  .mm-node text { pointer-events: none; }
+  .mm-link:hover .mm-node rect { filter: brightness(1.06); }
+  .mm-edge { transition: opacity .15s ease; }
+
+  .not-this { border: 1px solid var(--hairline); border-left: 4px solid var(--clay); border-radius: var(--radius); background: #fff; padding: 1.1rem 1.3rem; margin-top: 1.2rem; }
+  .not-this h3 { font-size: .95rem; font-weight: 800; margin-bottom: .5rem; }
+</style>
+
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn with Phoebe · Data Science</div>
+    <h1>ML in Production: <span class="accent">The Leader Cut</span></h1>
+    <p class="sub">Getting a model to work is the first half of an ML project. Keeping it worth running is the second, and it is decided by a handful of choices that are usually made by default: what problem to scope and what baseline to beat, how the model goes out to real traffic, when it gets retrained and on what, what gets watched and what happens when an alert fires, and when the right answer is to switch it off. Six sessions on those decisions, not the tooling. Each one carries a practitioner card for the team that will build what the leader signs. At the centre is a bench that replays two and a half years of a real electricity market in your browser under eight retrain policies, and prints what each one bought and what it cost.</p>
+    <div class="stats-row">
+      <div class="stat"><b data-count="6">6</b><span>sessions</span></div>
+      <div class="stat"><b data-count="15104">15,104</b><span>real market rows replayed</span></div>
+      <div class="stat"><b data-count="8">8</b><span>retrain policies on the bench</span></div>
+      <div class="stat"><b data-count="28">28</b><span>readiness tests scored</span></div>
+      <div class="stat"><b data-count="45">45</b><span>min per session</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section">
+    <div class="paths" style="margin-top:0">
+      <h2>The six sessions 🚢 <span style="font-size:.85rem;font-weight:600;color:var(--muted)">· from the launch plan to the decision to stop</span></h2>
+      <p class="plede">The running data is <strong>Elec2</strong>, 45,312 half-hours of the New South Wales electricity market from 1996 to 1998 and the most used concept-drift benchmark there is. The frameworks are Andrew Ng's Machine Learning in Production, the Hidden Technical Debt paper, the ML Test Score and Google's Rules of Machine Learning, each read at source.</p>
+    </div>
+
+    <div class="course-grid">
+      <a class="course-card" href="courses/01-the-first-deployment-is-the-middle.html" style="--diff:#FB923C">
+        <span class="cicon">🔄</span>
+        <span class="cnum">Session 1 · advanced</span>
+        <h3>The first deployment is the middle</h3>
+        <p>The lifecycle as a loop with the launch in the middle, the small box of ML code inside a production system and the debts around it, and a readiness score that takes the minimum. Build a one-page readiness sheet.</p>
+        <span class="meta"><span class="pill amber">▶ Start here</span></span>
+      </a>
+      <a class="course-card" href="courses/02-scope-it-like-a-project.html" style="--diff:#FB923C">
+        <span class="cicon">📐</span>
+        <span class="cnum">Session 2 · advanced</span>
+        <h3>Scope it like a project</h3>
+        <p>Diligence on feasibility and on value before any data is touched, the baseline a model has to beat, metrics first, and the first rule of machine learning: do not be afraid to launch without it.</p>
+        <span class="meta"><span class="pill">the scoping memo</span></span>
+      </a>
+      <a class="course-card" href="courses/03-shadow-canary-or-all-at-once.html" style="--diff:#FB923C">
+        <span class="cicon">🐤</span>
+        <span class="cnum">Session 3 · advanced</span>
+        <h3>Shadow, canary, or all at once</h3>
+        <p>Degrees of automation from human only to full automation, choosing between shadow mode, canary and blue-green, and writing the rollback before the rollout. Why training and serving skew is the test teams skip.</p>
+        <span class="meta"><span class="pill">the rollout plan</span></span>
+      </a>
+      <a class="course-card" href="courses/04-the-retrain-policy-bench.html" style="--diff:#F87171">
+        <span class="cicon">🎛️</span>
+        <span class="cnum">Session 4 · bench night</span>
+        <h3>The retrain-policy bench</h3>
+        <p>15,104 real Elec2 rows replayed live under eight policies. Weekly refits buy 4.85 points over never for 130 retrains; an alarm buys 4.08 for 6; retraining before every prediction is worse than no model at all.</p>
+        <span class="meta"><span class="pill amber">★ the bench</span></span>
+      </a>
+      <a class="course-card" href="courses/05-monitor-what-you-will-act-on.html" style="--diff:#FB923C">
+        <span class="cicon">📟</span>
+        <span class="cnum">Session 5 · advanced</span>
+        <h3>Monitor what you will act on</h3>
+        <p>Software, input and output signals, what to watch while labels are late, an action wired to every alert, and the feedback loops that let a model grade its own homework.</p>
+        <span class="meta"><span class="pill">the alert-to-action table</span></span>
+      </a>
+      <a class="course-card" href="courses/06-when-not-to-productionize.html" style="--diff:#FB923C">
+        <span class="cicon">🛑</span>
+        <span class="cnum">Session 6 · advanced</span>
+        <h3>When not to productionize</h3>
+        <p>What the famous failure rates really say, the kill criteria you write before launch, and the capstone: a one-page production decision memo that can say ship, hold, or stop.</p>
+        <span class="meta"><span class="pill amber">🔒 decision memo</span></span>
+      </a>
+    </div>
+
+    <div class="diff-legend">
+      <span><i style="background:#FB923C"></i>advanced</span>
+      <span><i style="background:#F87171"></i>bench night</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="paths" style="margin-top:0">
+      <h2>Your passport 🎫</h2>
+      <p class="plede">Clear all three quiz questions in a session and it gets stamped. Six stamps means you can scope an ML project against a baseline, choose how it goes out, set a retrain policy with its price on it, wire monitoring to actions, and write the memo that decides whether it runs at all. Stamps live in this browser only.</p>
+    </div>
+    <div class="pp-strip"></div>
+  </section>
+
+  <section class="section">
+    <div class="not-this">
+      <h3>What this is not, so you land in the right place 🧭</h3>
+      <table class="clean">
+        <tr><th>If your question is</th><th>Go here instead</th></tr>
+        <tr><td>How do I track experiments, register models, and write the deploy pipeline and CI?</td><td><a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b6-model-deploy-monitor.html">DataOps, builder sessions b5 and b6 ↗</a></td></tr>
+        <tr><td>Which drift statistic do I compute, and how do I run evaluation continuously?</td><td><a href="https://phoebefu6.github.io/learn-model-evaluation-with-phoebe/courses/b9-drift-continuous-eval.html">Model Evaluation, session b9 ↗</a></td></tr>
+        <tr><td>Who validates and signs off the model, and what does ongoing monitoring governance require?</td><td><a href="https://phoebefu6.github.io/learn-model-risk-with-phoebe/courses/p8-ongoing-monitoring.html">Model Risk ↗</a></td></tr>
+        <tr><td>How do I monitor pipeline freshness, volume and schema before the data reaches the model?</td><td><a href="https://phoebefu6.github.io/learn-data-observability-with-phoebe/">Data Observability ↗</a></td></tr>
+        <tr><td>My model is wrong in places. What do I fix next?</td><td><a href="https://phoebefu6.github.io/learn-ml-strategy-with-phoebe/">ML Strategy ↗</a></td></tr>
+        <tr><td><strong>I have to decide whether, how and for how long a model runs in production, and defend the decision.</strong></td><td><strong>you are in the right place</strong></td></tr>
+      </table>
+      <p style="margin-top:.7rem;font-size:.86rem;color:var(--muted)"><strong>The decisions, not the plumbing.</strong> Every session ends in a document a leader signs: a readiness sheet, a scoping memo, a rollout plan, a retrain policy with a price, an alert-to-action table, a production decision memo. The tools that carry them out are taught on the neighbouring shelves and linked from each page.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="paths">
+      <h2>Choose your path 🗺️</h2>
+      <p class="plede">Three doors into the same conviction: shipping a model is a decision you keep making, and every one of those decisions has a price you can put on the page.</p>
+      <div class="path"><b>🧑‍💼 I approve ML projects</b>
+        <a class="pstep" href="courses/01-the-first-deployment-is-the-middle.html">1</a><span class="parr">→</span>
+        <a class="pstep" href="courses/02-scope-it-like-a-project.html">2</a><span class="parr">→</span>
+        <a class="pstep" href="courses/04-the-retrain-policy-bench.html">4</a><span class="parr">→</span>
+        <a class="pstep" href="courses/06-when-not-to-productionize.html">6</a>
+        <span style="font-size:.82rem;color:var(--muted)">readiness, scoping, the price of freshness, the kill decision</span>
+      </div>
+      <div class="path"><b>🛠️ I run models in production</b>
+        <a class="pstep" href="courses/01-the-first-deployment-is-the-middle.html">1</a><span class="parr">→</span>
+        <a class="pstep" href="courses/03-shadow-canary-or-all-at-once.html">3</a><span class="parr">→</span>
+        <a class="pstep" href="courses/04-the-retrain-policy-bench.html">4</a><span class="parr">→</span>
+        <a class="pstep" href="courses/05-monitor-what-you-will-act-on.html">5</a>
+        <span style="font-size:.82rem;color:var(--muted)">rollout, retrain policy, monitoring wired to actions</span>
+      </div>
+      <div class="path"><b>🚢 The whole cut</b>
+        <a class="pstep" href="courses/01-the-first-deployment-is-the-middle.html">1</a><span class="parr">→</span>
+        <a class="pstep" href="courses/02-scope-it-like-a-project.html">2</a><span class="parr">→</span>
+        <a class="pstep" href="courses/03-shadow-canary-or-all-at-once.html">3</a><span class="parr">→</span>
+        <a class="pstep" href="courses/04-the-retrain-policy-bench.html">4</a><span class="parr">→</span>
+        <a class="pstep" href="courses/05-monitor-what-you-will-act-on.html">5</a><span class="parr">→</span>
+        <a class="pstep" href="courses/06-when-not-to-productionize.html">6</a>
+        <span style="font-size:.82rem;color:var(--muted)">from the launch plan to a signed production decision</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="paths" style="margin-top:0">
+      <h2>What is honest here 🧾</h2>
+      <p class="plede">The bench runs on real public rows, recomputed in your browser. Frameworks are quoted from their primary sources. Where a claim comes second-hand, the page says so, and where a famous number has no source, the page says that instead.</p>
+    </div>
+    <table class="clean">
+      <tr><th>Claim</th><th>Status</th></tr>
+      <tr><td>Every accuracy figure and retrain count on the bench</td><td><strong>Really computed</strong> in your browser from 15,104 rows of Elec2 (Harries 1999, OpenML dataset 151), and matched row for row by an independent Python run</td></tr>
+      <tr><td>The dollar cost of one retrain</td><td><strong>Set by you.</strong> $500 by default, a placeholder for validation, review, rollout and on-call time; the accuracy numbers never depend on it</td></tr>
+      <tr><td>Sculley et al. 2015, the ML Test Score 2017, the Rules of Machine Learning</td><td><strong>Read at source.</strong> The "5 percent ML code" line is quoted with its hedge, because the famous figure itself carries no number</td></tr>
+      <tr><td>Andrew Ng's lifecycle, deployment patterns and degrees of automation</td><td><strong>Course pages read; lecture content reported</strong> from compiled lecture notes, because the official notes sit behind the course login. The videos and the certificate stay official</td></tr>
+      <tr><td>Chip Huyen on distribution shift, feedback loops and retraining</td><td><strong>Read in the author's own blog posts;</strong> the book itself was not opened and none of its numbers are quoted</td></tr>
+      <tr><td>"87 percent of models never reach production", "85 percent of AI projects fail"</td><td><strong>Traced and corrected.</strong> The first comes from a sponsored panel write-up with no survey behind it; the second is a 2018 forecast about bias, not a failure rate</td></tr>
+      <tr><td>Worked examples: the readiness scores, the scoping memo, the rollout plan, the alert table, the decision memo</td><td><strong>Constructed</strong> for teaching, and labelled so on each page</td></tr>
+    </table>
+  </section>
+
+  <section class="section mm-section">
+    <h2>The knowledge map 🧠</h2>
+    <p class="mm-lede">The whole cut at a glance - hover a session to spotlight its concepts, click any node to jump in.</p>
+    <div class="mm-wrap"><div id="mindmap"></div></div>
+  </section>
+
+  <footer class="pagefoot">
+    <span>learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span>Neighbours on the shelf: <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/">DataOps ↗</a> &nbsp;·&nbsp; <a href="https://phoebefu6.github.io/learn-model-evaluation-with-phoebe/">Model Evaluation ↗</a> &nbsp;·&nbsp; <a href="https://phoebefu6.github.io/learn-model-risk-with-phoebe/">Model Risk ↗</a></span>
+  </footer>
+
+</main>
+
+<script>
+window.MINDMAP_DATA = {
+ "title": "ML in\nProduction",
+ "centerColor": "#6B2049",
+ "sessions": [
+  {
+   "label": "The first deployment\nis the middle",
+   "href": "courses/01-the-first-deployment-is-the-middle.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "The lifecycle is a loop",
+     "href": "courses/01-the-first-deployment-is-the-middle.html"
+    },
+    {
+     "label": "ML code is the small box",
+     "href": "courses/01-the-first-deployment-is-the-middle.html"
+    },
+    {
+     "label": "Weakest section scores",
+     "href": "courses/01-the-first-deployment-is-the-middle.html"
+    }
+   ]
+  },
+  {
+   "label": "Scope it like\na project",
+   "href": "courses/02-scope-it-like-a-project.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "Feasibility and value",
+     "href": "courses/02-scope-it-like-a-project.html"
+    },
+    {
+     "label": "The baseline to beat",
+     "href": "courses/02-scope-it-like-a-project.html"
+    },
+    {
+     "label": "Launch without ML first",
+     "href": "courses/02-scope-it-like-a-project.html"
+    }
+   ]
+  },
+  {
+   "label": "Shadow, canary,\nor all at once",
+   "href": "courses/03-shadow-canary-or-all-at-once.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "Degrees of automation",
+     "href": "courses/03-shadow-canary-or-all-at-once.html"
+    },
+    {
+     "label": "Pick the rollout pattern",
+     "href": "courses/03-shadow-canary-or-all-at-once.html"
+    },
+    {
+     "label": "Rollback before launch",
+     "href": "courses/03-shadow-canary-or-all-at-once.html"
+    }
+   ]
+  },
+  {
+   "label": "The retrain-policy\nbench",
+   "href": "courses/04-the-retrain-policy-bench.html",
+   "color": "#F87171",
+   "concepts": [
+    {
+     "label": "Freshness has a price",
+     "href": "courses/04-the-retrain-policy-bench.html"
+    },
+    {
+     "label": "Fresh is not enough data",
+     "href": "courses/04-the-retrain-policy-bench.html"
+    },
+    {
+     "label": "When no model wins",
+     "href": "courses/04-the-retrain-policy-bench.html"
+    }
+   ]
+  },
+  {
+   "label": "Monitor what you\nwill act on",
+   "href": "courses/05-monitor-what-you-will-act-on.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "Every alert, an action",
+     "href": "courses/05-monitor-what-you-will-act-on.html"
+    },
+    {
+     "label": "When labels arrive late",
+     "href": "courses/05-monitor-what-you-will-act-on.html"
+    },
+    {
+     "label": "Feedback loops",
+     "href": "courses/05-monitor-what-you-will-act-on.html"
+    }
+   ]
+  },
+  {
+   "label": "When not to\nproductionize",
+   "href": "courses/06-when-not-to-productionize.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "Failure-rate folklore",
+     "href": "courses/06-when-not-to-productionize.html"
+    },
+    {
+     "label": "The kill criteria",
+     "href": "courses/06-when-not-to-productionize.html"
+    },
+    {
+     "label": "One-page decision memo",
+     "href": "courses/06-when-not-to-productionize.html"
+    }
+   ]
+  }
+ ]
+};
+</script>
+<script src="assets/mindmap.js?v=1"></script>
+<script src="assets/app.js?v=2"></script>
+</body>
+</html>

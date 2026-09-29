@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 3 of 6. How much of the decision the model makes, the three ways to meet real traffic (shadow, canary, blue-green), and the rollback you write before the rollout. A one-page rollout plan for a model you are about to ship.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Shadow, canary, or all at once - learn ml production with phoebe">
+<meta property="og:description" content="Session 3 of 6. Degrees of automation, three deployment patterns and what each can prove, training/serving skew, and a rollback that has been rehearsed, timed and owned.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/courses/03-shadow-canary-or-all-at-once.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shadow, canary, or all at once - learn ml production with phoebe">
+<meta name="twitter:description" content="Session 3 of 6. Degrees of automation, shadow, canary, blue-green, and the rollback you write first.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 3 · Shadow, canary, or all at once - learn ml production with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-ml-production-with-phoebe</a> / Session 3 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ML in Production: The Leader Cut · Session 3 of 6</div>
+    <h1>Shadow, canary, or <span class="accent">all at once</span></h1>
+    <p class="sub">The model has cleared its baseline and the team wants to ship. The question in front of the leader is not "is it good enough?" any more; that was session 2. It is "how does it meet real traffic, how much of the decision does it get to make, and how fast can we take it back?" Tonight is three decisions in that order: the degree of automation, the deployment pattern, and the rollback. You leave with a one-page rollout plan for a model you are about to ship, with a promotion gate between every stage and a rollback somebody has actually timed.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Advanced</span>
+      <span class="chip audience">Leaders who sign off a rollout</span>
+      <span class="chip audience">Builders who run the switch</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Automation, patterns, rollback</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: the rollout plan</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Most launch reviews argue about the model's accuracy and wave the rollout through as an engineering detail. It is the other way round. Accuracy was measured on yesterday's data, offline. The rollout is the first time the model sees today's inputs, computed by today's pipeline, and the first time anyone acts on what it says. How that first contact is staged decides how much a mistake costs, how quickly you find it, and whether finding it means an apology or a one-line switch.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = fill it in for your own system</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> A one-page rollout plan for one model: the degree of automation it starts at and the one it should stop at, the deployment pattern and the reason for it, each stage with its traffic share and its promotion gate, the skew check that runs during shadow, and a rollback with a trigger, an owner, a time and the date it was last rehearsed.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers Ng's degrees of automation</span>
+      <h2>How much of the decision does the model make?</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">Before choosing how to deploy, decide what the model is for once it is deployed. Andrew Ng's Machine Learning in Production lectures lay out five degrees of automation, from a human deciding everything to the model deciding everything (reported, from compiled lecture notes). The two steps in the middle keep a human in the loop. The decision a leader signs here is not "do we automate?" but "which step do we aim for, and which step do we stop at?"</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Five steps rising left to right: human only, where a human decides every case; shadow mode, where the model runs but its output is only logged; AI assistance, where the model suggests and the human decides; partial automation, where the model decides when it is confident and a human takes the rest; full automation, where the model decides and a human audits. A bracket over AI assistance and partial automation reads human in the loop. Partial automation is highlighted as the step most projects should aim for first.">
+        <defs>
+          <filter id="s3aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="31" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s3aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s3aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3aH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s3aL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s3aS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s3aB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s3aA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s3aN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s3aH" x="30" y="26">FIVE DEGREES OF AUTOMATION: WHO MAKES THE CALL AT EACH STEP</text>
+        <text class="s3aA" x="30" y="46">left to right, the model makes more of the decision</text>
+
+        <g filter="url(#s3aSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="210" width="150" height="60" rx="8" transform="rotate(-0.6 105 240)" fill="#FFFFFF"/>
+          <rect x="198" y="182" width="150" height="60" rx="8" transform="rotate(0.5 273 212)" fill="#FBEFF5"/>
+          <rect x="366" y="154" width="150" height="60" rx="8" transform="rotate(-0.4 441 184)" fill="#FFFFFF"/>
+          <rect x="534" y="126" width="150" height="60" rx="8" transform="rotate(0.6 609 156)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="702" y="98" width="150" height="60" rx="8" transform="rotate(-0.5 777 128)" fill="url(#s3aHc)"/>
+          <!-- risers -->
+          <path d="M182 226 L196 214" marker-end="url(#s3aAr)"/>
+          <path d="M350 198 L364 186" marker-end="url(#s3aAr)"/>
+          <path d="M518 170 L532 158" marker-end="url(#s3aAr)"/>
+          <path d="M686 142 L700 130" marker-end="url(#s3aAr)"/>
+          <!-- human in the loop bracket -->
+          <path d="M366 110 L366 98 L684 98 L684 110" stroke="#A23B72"/>
+          <!-- doodle: the human -->
+          <circle cx="60" cy="184" r="8"/>
+          <path d="M60 192 L60 206 M50 200 L70 200"/>
+        </g>
+
+        <text class="s3aA" x="525" y="88" text-anchor="middle">human in the loop</text>
+
+        <text class="s3aL" x="105" y="232" text-anchor="middle">human only</text>
+        <text class="s3aS" x="105" y="248" text-anchor="middle">human decides</text>
+        <text class="s3aS" x="105" y="262" text-anchor="middle">every case</text>
+
+        <text class="s3aL" x="273" y="204" text-anchor="middle">shadow mode</text>
+        <text class="s3aS" x="273" y="220" text-anchor="middle">model runs too</text>
+        <text class="s3aS" x="273" y="234" text-anchor="middle">output logged only</text>
+
+        <text class="s3aL" x="441" y="176" text-anchor="middle">AI assistance</text>
+        <text class="s3aS" x="441" y="192" text-anchor="middle">model suggests</text>
+        <text class="s3aS" x="441" y="206" text-anchor="middle">human decides all</text>
+
+        <text class="s3aB" x="609" y="148" text-anchor="middle">partial automation</text>
+        <text class="s3aS" x="609" y="164" text-anchor="middle">sure: model decides</text>
+        <text class="s3aS" x="609" y="178" text-anchor="middle">unsure: a human</text>
+
+        <text class="s3aL" x="777" y="120" text-anchor="middle">full automation</text>
+        <text class="s3aS" x="777" y="136" text-anchor="middle">model decides all</text>
+        <text class="s3aS" x="777" y="150" text-anchor="middle">human audits</text>
+
+        <text class="s3aN" x="30" y="292">Steps as named in Ng's lectures (reported). Ochre: the step most projects should aim for first.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - you choose the step you stop at; full automation is one option, not the destination</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>The five steps, and what the human does at each<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <table class="clean">
+          <tr><th>Step</th><th>Who decides</th><th>What the human does</th></tr>
+          <tr><td>Human only</td><td>A person, every case</td><td>Everything. This is today's process and the baseline the model has to beat</td></tr>
+          <tr><td>Shadow mode</td><td>Still the person</td><td>Works exactly as before; the model runs alongside, and its output is logged, never shown or used</td></tr>
+          <tr><td>AI assistance</td><td>The person, with a suggestion</td><td>Sees the model's answer and decides; the model speeds the person up</td></tr>
+          <tr><td>Partial automation</td><td>The model when it is confident, the person otherwise</td><td>Takes the cases the model is unsure about</td></tr>
+          <tr><td>Full automation</td><td>The model, every case</td><td>Audits samples, handles complaints, owns the off switch</td></tr>
+        </table>
+        <p>Ng's lectures call the two middle steps "human in the loop" (reported). They are where most of the value sits for the fewest surprises: the model does the easy, confident volume, and people keep the cases where a wrong answer costs the most.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Choose the step by the cost of an error and how often the model is sure<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Two numbers pick the step. The first is the cost of one wrong decision acted on without a person checking it. The second is the share of cases where the model is confident enough to be trusted alone, measured on your data, not assumed. A high error cost and a small confident share point to AI assistance. A moderate cost and a large confident share point to partial automation. Full automation needs a low error cost, or a confident share so large and so well measured that the remaining human review would add nothing.</p>
+        <p>You can stop at any step. Full automation is not the goal by default; for many decisions partial automation is the finished product, because the human queue is exactly where the expensive errors would have gone. Write the stopping step into the plan now, so that "let's automate the rest" becomes a new decision later rather than a drift.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Move up one step at a time, each with a promotion criterion<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Each step up is its own launch. Give every move a written criterion before it happens: shadow to assistance when the model agrees with the human on enough cases and its disagreements are reviewed; assistance to partial when the people using it accept its confident answers almost always and the confidence threshold has been set on logged data; partial to full only if the human queue has stopped catching anything the model got wrong. The thresholds are yours to set and they will differ by decision. What must not differ is that each one is written before the move, not argued after it.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>A model that watches the inspector first.</strong> Ng's own example of shadow mode is a visual inspection system on a production line (reported, from compiled lecture notes). A human inspector keeps checking parts as before. The model runs in parallel on the same parts, and its verdicts are logged and not used for anything. Only when the logged verdicts are compared with the inspector's and found good enough does the model get to influence a decision at all. The leader's signature at this step costs almost nothing: no customer ever sees a shadow prediction.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers Ng's deployment patterns</span>
+      <h2>Three ways to meet real traffic</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">Once the step is chosen, the deployment pattern decides how traffic reaches the new model. Ng's lectures teach three (reported). Shadow mode copies every request to the new model and serves the old answer. A canary sends a small share of traffic to the new model, "maybe 5% (or even less of traffic initially)", and the rest to the old one. Blue-green keeps two full stacks and switches between them, which makes rollback easy. The decision here is which risk you are buying down: not knowing, blast radius, or time to undo.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three panels. Shadow: every request is copied to the old and the new model; the old model's answer is served and the new model's answer is only logged. Canary: a router sends maybe 5 percent of requests to the new model and the rest to the old model, both watched. Blue-green: a switch sends all traffic to one of two full stacks, the new one serving and the old one kept warm for an instant switch back.">
+        <defs>
+          <filter id="s3bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="37" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s3bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s3bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3bH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s3bL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s3bS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s3bB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s3bW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s3bN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s3bH" x="30" y="26">WHERE EACH REQUEST GOES, AND WHOSE ANSWER THE CUSTOMER GETS</text>
+
+        <g filter="url(#s3bSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- panels -->
+          <rect x="30" y="44" width="260" height="218" rx="10" transform="rotate(-0.3 160 153)" fill="#FFFFFF" stroke="#E2CBD7"/>
+          <rect x="310" y="44" width="260" height="218" rx="10" transform="rotate(0.3 440 153)" fill="#FFFFFF" stroke="#E2CBD7"/>
+          <rect x="590" y="44" width="260" height="218" rx="10" transform="rotate(-0.3 720 153)" fill="#FFFFFF" stroke="#E2CBD7"/>
+
+          <!-- shadow -->
+          <rect x="110" y="80" width="100" height="30" rx="6" transform="rotate(-1 160 95)" fill="url(#s3bHc)"/>
+          <circle cx="160" cy="146" r="6" fill="#FFFFFF"/>
+          <path d="M160 112 L160 138" marker-end="url(#s3bAr)"/>
+          <path d="M154 150 L102 188" marker-end="url(#s3bAr)"/>
+          <path d="M166 150 L218 188" stroke-dasharray="6 5" marker-end="url(#s3bAr)"/>
+          <rect x="44" y="190" width="110" height="36" rx="6" transform="rotate(0.8 99 208)" fill="#FBEFF5"/>
+          <rect x="166" y="190" width="110" height="36" rx="6" transform="rotate(-0.8 221 208)" fill="#FFFFFF" stroke-dasharray="6 5"/>
+
+          <!-- canary -->
+          <rect x="390" y="80" width="100" height="30" rx="6" transform="rotate(1 440 95)" fill="url(#s3bHc)"/>
+          <path d="M440 112 L440 126" marker-end="url(#s3bAr)"/>
+          <rect x="400" y="128" width="80" height="32" rx="6" fill="#9A5B00" stroke="#9A5B00"/>
+          <path d="M420 162 L382 188" marker-end="url(#s3bAr)"/>
+          <path d="M460 162 L498 188" marker-end="url(#s3bAr)"/>
+          <rect x="324" y="190" width="110" height="36" rx="6" transform="rotate(-0.8 379 208)" fill="#FBEFF5"/>
+          <rect x="446" y="190" width="110" height="36" rx="6" transform="rotate(0.8 501 208)" fill="#FFFFFF"/>
+
+          <!-- blue-green -->
+          <rect x="670" y="80" width="100" height="30" rx="6" transform="rotate(-1 720 95)" fill="url(#s3bHc)"/>
+          <path d="M720 112 L720 126" marker-end="url(#s3bAr)"/>
+          <rect x="680" y="128" width="80" height="32" rx="6" fill="#FFFFFF"/>
+          <path d="M700 144 L740 136"/>
+          <circle cx="740" cy="136" r="3" fill="#2A1621"/>
+          <path d="M700 162 L662 188" stroke-dasharray="6 5"/>
+          <path d="M740 162 L778 188" marker-end="url(#s3bAr)"/>
+          <rect x="604" y="190" width="110" height="36" rx="6" transform="rotate(0.8 659 208)" fill="#FBEFF5" stroke-dasharray="6 5"/>
+          <rect x="726" y="190" width="110" height="36" rx="6" transform="rotate(-0.8 781 208)" fill="#FFFFFF"/>
+        </g>
+
+        <text class="s3bH" x="44" y="66">SHADOW</text>
+        <text class="s3bH" x="324" y="66">CANARY</text>
+        <text class="s3bH" x="604" y="66">BLUE-GREEN</text>
+
+        <text class="s3bL" x="160" y="100" text-anchor="middle">request</text>
+        <text class="s3bS" x="176" y="134">every request copied</text>
+        <text class="s3bL" x="99" y="213" text-anchor="middle">old model</text>
+        <text class="s3bL" x="221" y="213" text-anchor="middle">new model</text>
+        <text class="s3bS" x="99" y="244" text-anchor="middle">answer served</text>
+        <text class="s3bS" x="221" y="244" text-anchor="middle">logged, not served</text>
+
+        <text class="s3bL" x="440" y="100" text-anchor="middle">request</text>
+        <text class="s3bW" x="440" y="149" text-anchor="middle">router</text>
+        <text class="s3bS" x="370" y="176" text-anchor="middle">the rest</text>
+        <text class="s3bB" x="522" y="176" text-anchor="middle">"maybe 5%"</text>
+        <text class="s3bL" x="379" y="213" text-anchor="middle">old model</text>
+        <text class="s3bL" x="501" y="213" text-anchor="middle">new model</text>
+        <text class="s3bS" x="440" y="244" text-anchor="middle">both served, both monitored</text>
+
+        <text class="s3bL" x="720" y="100" text-anchor="middle">request</text>
+        <text class="s3bS" x="720" y="176" text-anchor="middle">one switch</text>
+        <text class="s3bL" x="659" y="213" text-anchor="middle">blue: old stack</text>
+        <text class="s3bL" x="781" y="213" text-anchor="middle">green: new stack</text>
+        <text class="s3bS" x="659" y="244" text-anchor="middle">kept warm</text>
+        <text class="s3bS" x="781" y="244" text-anchor="middle">serving now</text>
+
+        <text class="s3bN" x="30" y="288">Patterns and the canary share as in Ng's lectures (reported). Dashed: traffic that is not served to anyone.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - shadow buys knowledge, canary limits the blast radius, blue-green buys time to undo</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Shadow: what it proves, and what it cannot<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A shadow run puts the new model on real inputs, computed by the real serving pipeline, at real load. It proves three things cheaply: whether the features it sees live match the ones it was trained on (training/serving skew, Part 3), how often it agrees with the old model or the human, and whether it meets its latency budget under real traffic. Nobody is affected if it is wrong.</p>
+        <p>What it cannot prove is the effect of acting on its predictions. Its answers are never used, so the world never reacts to them: no customer changes behaviour, no downstream team works a different queue, no feedback loop starts. If the value of the model depends on what happens after the decision, shadow mode tells you nothing about that value. Only live traffic does, which is what the canary is for.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Canary: what it limits, and the rule you need before it starts<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A canary limits the blast radius. If the new model is wrong in a way shadow could not show, only the small share of traffic routed to it is hurt, and for only as long as the canary runs. It also gives you the first measurement of the model's real effect, on a sample, with the old model serving the rest as a live comparison.</p>
+        <p>The canary is only as good as the promotion rule written before it starts: the metrics the new model must clear against the old one on the same period, the minimum duration or volume before anyone looks, and the result that sends it back. A canary without that rule becomes a slow full launch, promoted because nothing loud went wrong.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Blue-green: instant rollback, and what it costs<span class="mini">1 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Blue-green runs two complete serving stacks. All traffic goes to one; the switch moves it to the other. The old stack stays warm, so rolling back is one switch, not a redeploy. The price is running two full stacks for as long as you want that option, and the discipline to keep the old stack truly deployable: same feature pipeline, same dependencies, still passing its checks. A blue stack that quietly rotted is not a rollback.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>"All at once" is a legitimate choice, sometimes<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Switching all traffic in one move is not reckless by definition. It is the right call when a wrong prediction is cheap and reversible (a ranking tweak, an internal dashboard, a recommendation a person glances past), when traffic is too thin for a small share to tell you anything in a useful time, and when the old model can be restored quickly by redeploying it. What makes it safe is not the pattern; it is a rollback plan that exists before the switch, a monitor that would notice the problem, and an owner who is on call the day it ships.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Even at Google, these are not a given.</strong> The ML Test Score paper lists a canary test and a rollback test among its 28 production tests, and reports what its authors found when they met 36 teams across Google: "none of these tests was implemented by more than 80% of teams". Staged rollout and quick rollback sound like hygiene. In practice, at one of the most mature ML organisations there is, some teams did not have them. A leader should ask for them by name rather than assume them.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers rollback and training/serving skew</span>
+      <h2>Write the rollback before the rollout</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">The pattern follows from three questions, asked in order. The first is whether a person makes this decision today, because if one does, shadow mode is almost free and you should take it. The rest is about what a mistake costs and how fast you must undo it. Whatever the answer, the plan has one line that is not optional: how you roll back, who pulls it, and how long it takes.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A decision tree. Question 1: does a human make this decision today? Yes: start in shadow mode. No: question 2: is one wrong prediction expensive? Yes: canary with a small share. No: question 3: do you need rollback in seconds? Yes: blue-green. No: all at once, with a rollback plan.">
+        <defs>
+          <filter id="s3cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="41" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s3cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s3cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3cH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s3cL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s3cS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s3cB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s3cV { font: 800 12px Inter, sans-serif; fill: #6B2049; }
+          .s3cN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s3cH" x="30" y="26">THREE QUESTIONS, IN ORDER, PICK THE PATTERN</text>
+
+        <g filter="url(#s3cSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- questions -->
+          <rect x="280" y="44" width="340" height="40" rx="8" transform="rotate(-0.4 450 64)" fill="#FBEFF5"/>
+          <rect x="280" y="118" width="340" height="40" rx="8" transform="rotate(0.4 450 138)" fill="#FBEFF5"/>
+          <rect x="280" y="192" width="340" height="40" rx="8" transform="rotate(-0.4 450 212)" fill="#FBEFF5"/>
+          <!-- leaves -->
+          <rect x="40" y="44" width="190" height="40" rx="8" transform="rotate(-0.8 135 64)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="40" y="118" width="190" height="40" rx="8" transform="rotate(0.7 135 138)" fill="#FFFFFF"/>
+          <rect x="40" y="192" width="190" height="40" rx="8" transform="rotate(-0.6 135 212)" fill="#FFFFFF"/>
+          <rect x="280" y="266" width="340" height="40" rx="8" transform="rotate(0.4 450 286)" fill="url(#s3cHc)"/>
+          <!-- yes arrows -->
+          <path d="M278 64 L236 64" marker-end="url(#s3cAr)"/>
+          <path d="M278 138 L236 138" marker-end="url(#s3cAr)"/>
+          <path d="M278 212 L236 212" marker-end="url(#s3cAr)"/>
+          <!-- no arrows -->
+          <path d="M450 86 L450 114" marker-end="url(#s3cAr)"/>
+          <path d="M450 160 L450 188" marker-end="url(#s3cAr)"/>
+          <path d="M450 234 L450 262" marker-end="url(#s3cAr)"/>
+          <!-- doodle: the rollback loop -->
+          <path d="M680 296 C664 296 656 282 662 272 C668 262 684 260 692 270" marker-end="url(#s3cAr)"/>
+        </g>
+
+        <text class="s3cL" x="450" y="68" text-anchor="middle">Q1 · does a human make this decision today?</text>
+        <text class="s3cL" x="450" y="142" text-anchor="middle">Q2 · is one wrong prediction expensive?</text>
+        <text class="s3cL" x="450" y="216" text-anchor="middle">Q3 · do you need rollback in seconds?</text>
+
+        <text class="s3cB" x="135" y="68" text-anchor="middle">start in shadow mode</text>
+        <text class="s3cV" x="135" y="142" text-anchor="middle">canary, small share</text>
+        <text class="s3cV" x="135" y="216" text-anchor="middle">blue-green</text>
+        <text class="s3cV" x="450" y="290" text-anchor="middle">all at once, with a rollback plan</text>
+
+        <text class="s3cS" x="44" y="100">the human is a free comparison</text>
+        <text class="s3cS" x="44" y="174">limit the blast radius</text>
+        <text class="s3cS" x="44" y="248">two stacks, one switch</text>
+
+        <text class="s3cS" x="257" y="58" text-anchor="middle">yes</text>
+        <text class="s3cS" x="257" y="132" text-anchor="middle">yes</text>
+        <text class="s3cS" x="257" y="206" text-anchor="middle">yes</text>
+        <text class="s3cS" x="460" y="104">no</text>
+        <text class="s3cS" x="460" y="178">no</text>
+        <text class="s3cS" x="460" y="252">no</text>
+        <text class="s3cS" x="704" y="284">every branch has one</text>
+
+        <text class="s3cN" x="30" y="330">The patterns are Ng's (reported); the order of the questions is a teaching aid, not a rule from the lectures.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - shadow first whenever a person already makes the call; a canary is shadow's next step, not its replacement</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Rollback has to be rehearsed, not just possible<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The ML Test Score puts rollout and rollback in its infrastructure section. Infra 6 is the canary test. Infra 7 reads: "Models can be quickly and safely rolled back to a previous serving version." Both halves of that sentence are tests a team can fail. "Quickly" means somebody has timed it. "Safely" means the previous version still works with today's feature pipeline and today's dependencies, which you only know if you tried.</p>
+        <p>A rollback nobody has run is a hope. Rehearse it on a quiet day, time it, and write down who can pull it without asking anyone. In the ML Test Score's scoring, a rollback done by hand and documented earns half a point; one that runs automatically and repeatedly earns the full point.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Training/serving skew, and why shadow is the cheapest place to catch it<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Monitoring test 3 of the ML Test Score is "training and serving are not skewed": the features the model sees live are computed the same way as the features it was trained on. Among the 36 Google teams the authors met, they call it "Perhaps the most important and least implemented test". It is common because the same feature is usually computed twice, once in a batch pipeline for training and once in the serving path, by different code, sometimes by different teams.</p>
+        <p>Shadow mode is the cheapest place to catch it. The model is running on live inputs, nobody is acting on its output, and you can recompute the training-pipeline version of every served feature on the same rows and compare. Skew found in shadow costs a fix. Skew found in a full launch costs the decisions made on it. Statistical drift tests on the live inputs belong to <a href="https://phoebefu6.github.io/learn-model-evaluation-with-phoebe/courses/b9-drift-continuous-eval.html">Model Evaluation b9 ↗</a>.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Zinkevich's three rules against skew<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Martin Zinkevich's Rules of Machine Learning spend three rules on the problem. <strong>Rule 29:</strong> save the features as they were at serving time and log them, so the model can be trained on exactly what it saw. <strong>Rule 32:</strong> re-use code between the training pipeline and the serving path, so there is one computation of each feature, not two. <strong>Rule 37, "Measure Training/Serving Skew":</strong> compare how the model performs on the data it was trained on, on held-out data, on next-day data and live. A gap between next-day data and live data "probably indicates an engineering error", because those should behave the same if the pipelines agree.</p>
+        <p>Rules 29 and 32 prevent skew; Rule 37 detects what gets through. A rollout plan should say which of the three you have.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The test most teams skip is the one that bites at launch.</strong> Of the 28 tests in the ML Test Score, the authors single out one after meeting 36 Google teams: training/serving skew, "Perhaps the most important and least implemented test". Zinkevich gives the practical tell in Rule 37: when a model does well on next-day data and worse live, the likeliest cause is not the world, it is an engineering error between two pipelines. Both come from people who ran production ML at scale, and both point at the same thing a shadow run can show before anyone is affected.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>The rollout plan</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Pick one model that is about to ship, or one that shipped all at once and should not have. If you have none, use the Elec2 price-direction model from session 4. Six blocks, each copied into a document and filled in. The plan is finished when a person who was not in the room could run the rollout and the rollback from it.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A constructed staged rollout: shadow with none of the traffic served, then a canary at maybe 5 percent, then 25 percent, then 50 percent, then full at 100 percent. A promotion gate sits between every pair of stages. From every stage a rollback arrow drops to the old model, which stays deployed one switch away.">
+        <defs>
+          <filter id="s3dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="43" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s3dHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s3dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3dH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s3dL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s3dS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s3dB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s3dV { font: 800 13px Inter, sans-serif; fill: #6B2049; }
+          .s3dA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s3dN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s3dH" x="30" y="26">THE PLAN AS A TIMELINE: STAGES, GATES, AND A WAY BACK FROM EVERY ONE</text>
+        <text class="s3dA" x="30" y="46">a gate: the new model clears the written numbers, or it stays where it is</text>
+
+        <g filter="url(#s3dSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- stages -->
+          <rect x="52" y="90" width="120" height="62" rx="8" transform="rotate(-0.8 112 121)" fill="#FBEFF5"/>
+          <rect x="216" y="90" width="120" height="62" rx="8" transform="rotate(0.6 276 121)" fill="#FFFFFF"/>
+          <rect x="380" y="90" width="120" height="62" rx="8" transform="rotate(-0.5 440 121)" fill="#FFFFFF"/>
+          <rect x="544" y="90" width="120" height="62" rx="8" transform="rotate(0.7 604 121)" fill="#FFFFFF"/>
+          <rect x="708" y="90" width="120" height="62" rx="8" transform="rotate(-0.6 768 121)" fill="#FBEFF5"/>
+          <!-- forward arrows through gates -->
+          <path d="M174 121 L210 121" marker-end="url(#s3dAr)"/>
+          <path d="M338 121 L374 121" marker-end="url(#s3dAr)"/>
+          <path d="M502 121 L538 121" marker-end="url(#s3dAr)"/>
+          <path d="M666 121 L702 121" marker-end="url(#s3dAr)"/>
+          <!-- gates -->
+          <rect x="188" y="104" width="10" height="34" rx="2" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="352" y="104" width="10" height="34" rx="2" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="516" y="104" width="10" height="34" rx="2" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="680" y="104" width="10" height="34" rx="2" fill="#9A5B00" stroke="#9A5B00"/>
+          <!-- old model -->
+          <rect x="52" y="200" width="776" height="36" rx="8" transform="rotate(0.2 440 218)" fill="url(#s3dHc)"/>
+          <!-- rollback arrows -->
+          <path d="M112 154 L112 196" marker-end="url(#s3dAr)"/>
+          <path d="M276 154 L276 196" marker-end="url(#s3dAr)"/>
+          <path d="M440 154 L440 196" marker-end="url(#s3dAr)"/>
+          <path d="M604 154 L604 196" marker-end="url(#s3dAr)"/>
+          <path d="M768 154 L768 196" marker-end="url(#s3dAr)"/>
+        </g>
+
+        <text class="s3dB" x="193" y="84" text-anchor="middle">gate</text>
+        <text class="s3dB" x="357" y="84" text-anchor="middle">gate</text>
+        <text class="s3dB" x="521" y="84" text-anchor="middle">gate</text>
+        <text class="s3dB" x="685" y="84" text-anchor="middle">gate</text>
+
+        <text class="s3dL" x="112" y="110" text-anchor="middle">shadow</text>
+        <text class="s3dV" x="112" y="128" text-anchor="middle">0% served</text>
+        <text class="s3dS" x="112" y="144" text-anchor="middle">2 weeks</text>
+        <text class="s3dL" x="276" y="110" text-anchor="middle">canary 1</text>
+        <text class="s3dV" x="276" y="128" text-anchor="middle">"maybe 5%"</text>
+        <text class="s3dS" x="276" y="144" text-anchor="middle">1 week</text>
+        <text class="s3dL" x="440" y="110" text-anchor="middle">canary 2</text>
+        <text class="s3dV" x="440" y="128" text-anchor="middle">25%</text>
+        <text class="s3dS" x="440" y="144" text-anchor="middle">1 week</text>
+        <text class="s3dL" x="604" y="110" text-anchor="middle">canary 3</text>
+        <text class="s3dV" x="604" y="128" text-anchor="middle">50%</text>
+        <text class="s3dS" x="604" y="144" text-anchor="middle">3 days</text>
+        <text class="s3dL" x="768" y="110" text-anchor="middle">full</text>
+        <text class="s3dV" x="768" y="128" text-anchor="middle">100%</text>
+        <text class="s3dS" x="768" y="144" text-anchor="middle">old kept warm</text>
+
+        <text class="s3dS" x="120" y="180">rollback</text>
+        <text class="s3dL" x="440" y="223" text-anchor="middle">old model: still deployed, one switch away</text>
+
+        <text class="s3dN" x="30" y="264">Only "maybe 5%" is Ng's (reported). Every other share and duration is constructed; your numbers will differ.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - every stage has a gate forward and an arrow back; a plan missing either is a launch, not a rollout</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Name the step you start at and the step you stop at.</strong> From Part 1. The stopping step is the one that tends to go unwritten, and it is the one that stops "just automate the rest" from happening by drift.</p>
+        <div class="prompt-box good"><span class="label">★ Block 1 · degree of automation</span>Model:                 ____________________________
+Today the decision is: human only / shadow / assistance / partial / full
+We start at:           ____________
+We aim for:            ____________   and we stop there unless: ____________
+Confident share needed for partial automation: ____  (measured on logged data)</div>
+      </div>
+      <div class="step">
+        <p><strong>Pick the pattern by answering the three questions.</strong> Write the answers, not only the result. If the answer to Q1 is yes, the plan starts in shadow, whatever comes after.</p>
+        <div class="prompt-box good"><span class="label">★ Block 2 · the pattern and why</span>Q1 Does a human make this decision today?     yes / no
+Q2 Is one wrong prediction expensive?         yes / no   (cost of one: ________)
+Q3 Do we need rollback in seconds?            yes / no
+Pattern: shadow -&gt; canary / canary / blue-green / all at once
+Because: ______________________________________________</div>
+      </div>
+      <div class="step">
+        <p><strong>Lay out the stages.</strong> A share of traffic, a minimum duration or volume before anyone reads the numbers, and what is logged. A canary share with too little traffic behind it tells you nothing in a week; size the duration to the volume.</p>
+        <div class="prompt-box good"><span class="label">★ Block 3 · stages</span>Stage     Traffic to new   Min duration / volume   Logged
+shadow    0% served        ________                inputs, both predictions, latency
+canary 1  ____%            ________                ________
+canary 2  ____%            ________                ________
+full      100%             ________                ________
+Old model kept deployed until: ________</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the promotion gate for each stage.</strong> Numbers the new model must clear against the old model on the same period, and against the no-model baseline from session 2. If the new model cannot beat "do what the rule does today", it should not be promoted, however good it looked offline.</p>
+        <div class="prompt-box good"><span class="label">★ Block 4 · promotion criteria</span>Gate          Metric           vs old model      vs no-model baseline   Else
+shadow -&gt; c1  ____________     ____              ____                    stay / back
+c1 -&gt; c2      ____________     ____              ____                    stay / back
+c2 -&gt; full    ____________     ____              ____                    stay / back
+Constructed example, Elec2 price direction: agreement with the old model and
+accuracy on labelled rows, vs "repeat the previous half-hour", which scores
+0.8533 on the full file (session 2). Your numbers will differ.</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the rollback.</strong> Four lines, and the last one is the one leaders should ask to see. A rollback with no rehearsal date has not been tested.</p>
+        <div class="prompt-box good"><span class="label">★ Block 5 · the rollback</span>Trigger (the number, or the event): ______________________
+Who pulls it, without asking anyone: ______________________
+How long it takes, timed:            ________ minutes
+Last rehearsed on:                   ________  (a date, or "never")</div>
+      </div>
+      <div class="step">
+        <p><strong>Name the skew check that runs during shadow.</strong> List the features computed in two places, the training pipeline and the serving path, and how each is compared. These are the features Rule 32 would have you merge into one computation.</p>
+        <div class="prompt-box good"><span class="label">★ Block 6 · the skew check</span>Feature             Training source      Serving source      Tolerance
+________________    ________________     ________________    ______
+________________    ________________     ________________    ______
+Serving-time features logged for training (Rule 29):  yes / no
+Next-day vs live performance compared (Rule 37):     yes / no</div>
+      </div>
+    </div>
+
+    <div class="wyb">
+      <span class="wyb-pill">What you would build</span>
+      <p>A shadow comparison you can run in a day. During the shadow stage the serving path logs, for every request, the features it used and both models' predictions. This script reads that log, measures how often the two models agree, then recomputes each feature with the training pipeline on the same rows and flags any feature whose serving-time mean drifts from the training-pipeline mean by more than a tolerance you set.</p>
+      <div class="prompt-box good"><span class="label">★ shadow_check.py</span>import pandas as pd
+
+TOL = 0.01   # relative tolerance per feature; set your own
+
+log = pd.read_parquet("serving_log.parquet")   # one row per request in the shadow period
+# columns: request_id, ts, pred_old, pred_new, and every feature as served, named f_*
+
+agree = (log["pred_old"] == log["pred_new"]).mean()
+print("agreement, old vs new:", round(agree, 4))
+
+feats = [c for c in log.columns if c.startswith("f_")]
+# training_features(): your training pipeline's feature code, run on the same rows
+train = training_features(log[["request_id", "ts"]])
+both = log.merge(train, on="request_id", suffixes=("_serve", "_train"))
+
+for f in feats:
+    serve, trained = both[f + "_serve"], both[f + "_train"]
+    diff = (serve - trained).mean()
+    scale = trained.abs().mean() or 1.0
+    flag = "SKEW" if abs(diff) / scale &gt; TOL else "ok"
+    print(f, round(diff, 5), flag)
+# your numbers will differ</div>
+      <p>A mean difference is the first, cheapest check; a feature can match on average and still differ row by row, so look at the flagged ones by hand. The serving path, the router, the log itself and the deploy scripts are built in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b6-model-deploy-monitor.html">DataOps session b6 ↗</a>.</p>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Time the rollback with a stopwatch, not an estimate.</strong> Put the measured minutes and the rehearsal date on the plan's first line. Session 6 asks whether a model should still be running, and "we can switch it off in four minutes, we did it last month" is a much stronger answer than "we could roll back if we had to".</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 4</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Place one live model on the automation ladder,</strong> and write the step you would stop at, with the reason. If the model is at full automation and the honest answer is "partial", that is a finding.</li>
+      <li><strong>Draw the traffic path for your current deploy.</strong> Where a request enters, what decides which model answers it, and whose answer is served. If nobody can draw it, you are deploying all at once without having chosen to.</li>
+      <li><strong>Rehearse a rollback and time it.</strong> On a quiet day, in the real environment or the closest thing to it. Write down the minutes, the person who did it, and anything that surprised them.</li>
+      <li><strong>List the features computed in two places.</strong> For each, name the training source and the serving source. The list is the start of your skew check and of a Rule 32 conversation with the team that owns the serving path.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 3 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · A team ran the new model in shadow mode for a month and wants to skip the canary because "shadow already proved it works". What can shadow mode not tell them?</p>
+      <button class="qopt" type="button">A · Whether the live features match the training features</button>
+      <button class="qopt" type="button">B · How often the new model agrees with the old one on real inputs</button>
+      <button class="qopt" type="button">C · The effect of acting on the new model's predictions, because in shadow nobody acts on them and the world never reacts</button>
+      <button class="qopt" type="button">D · Whether the new model meets its latency budget under real load</button>
+      <p class="qwhy">Shadow runs on real inputs at real load, so it can show skew, agreement and latency. Its answers are never served, so it cannot measure what happens when they are. That is what the canary is for.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">2 · Why does the ML Test Score single out training/serving skew among its 28 tests?</p>
+      <button class="qopt" type="button">A · Among the 36 Google teams the authors met, it was "Perhaps the most important and least implemented test"</button>
+      <button class="qopt" type="button">B · It is the only test that can be automated</button>
+      <button class="qopt" type="button">C · It carries double weight in the final score</button>
+      <button class="qopt" type="button">D · Every team had implemented it, so it sets the bar for the others</button>
+      <p class="qwhy">Every test scores the same, and the final score is the minimum of the four sections. Skew is singled out because it matters most and was the least often in place, often because a feature is computed by two different pieces of code.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">3 · A credit analyst approves every loan today. One wrong automated approval is expensive. Which rollout fits?</p>
+      <button class="qopt" type="button">A · All at once, with a rollback plan</button>
+      <button class="qopt" type="button">B · Blue-green, because it rolls back fastest</button>
+      <button class="qopt" type="button">C · Straight to a canary at a small share</button>
+      <button class="qopt" type="button">D · Shadow mode first, alongside the analyst, then a canary at a small share once shadow agrees</button>
+      <p class="qwhy">A person already makes the decision, so shadow mode is almost free and compares the model with the analyst on real cases. The high cost of an error then argues for a small canary before any wider share.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Ng, Machine Learning in Production, week 1: deployment patterns and degrees of automation</span><span class="note">Week title read on the DeepLearning.AI and Coursera pages; lecture content, including shadow, canary "maybe 5%", blue-green, the five degrees and the inspection example, reported from compiled lecture notes. Videos and certificate stay official</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Breck et al. 2017, The ML Test Score: Infra 6-7 and Monitor 3</span><span class="note">Read at source: the canary test, the rollback test in its short form, training/serving skew, the 36 teams and the 80 percent finding</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Zinkevich, Rules of Machine Learning: Rules 29, 32 and 37</span><span class="note">Read at source: log serving-time features, re-use code between training and serving, measure training/serving skew</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Rollout shares and durations</span><span class="note">Every percentage beyond Ng's "maybe 5%", and every stage duration, is constructed for the plan and labelled so</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Deploy tooling: routers, serving, deploy scripts</span><span class="note">Not taught here; built in DataOps b6</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 3 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Five degrees of automation</b><span>Human only, shadow, AI assistance, partial, full. Write down the step you stop at.</span></div>
+      <div class="cheat-item"><b>Human in the loop</b><span>AI assistance and partial automation. Partial is where most projects should aim first.</span></div>
+      <div class="cheat-item"><b>Shadow proves skew, not impact</b><span>Real inputs, nobody acts on the output, so it cannot measure what acting would do.</span></div>
+      <div class="cheat-item"><b>Canary limits blast radius</b><span>"Maybe 5%" first, and a promotion rule written before it starts.</span></div>
+      <div class="cheat-item"><b>Blue-green buys instant rollback</b><span>Two full stacks, one switch. The old one must stay truly deployable.</span></div>
+      <div class="cheat-item"><b>Rollback: rehearsed, timed, owned</b><span>A trigger, a person, the minutes, and the date it last ran.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>Session 4 is bench night. The model is out, and the world keeps moving under it. Eight retrain policies, from never to every step, are replayed on real electricity-market rows, each with its accuracy and its price, so the retrain decision stops being a gut feeling and becomes a number you can sign.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 3 of 6 · learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="02-scope-it-like-a-project.html">← Prev: Scope it like a project</a> &nbsp;·&nbsp; <a href="04-the-retrain-policy-bench.html">Next: The retrain-policy bench →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=2"></script>
+</body>
+</html>

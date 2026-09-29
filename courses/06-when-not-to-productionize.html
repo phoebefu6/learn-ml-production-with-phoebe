@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 6 of 6. The kill decision: what the famous ML failure rates really say, the stop criteria you write before launch, how to retire a model safely, and the capstone one-page production decision memo that can say ship, hold, or stop.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="When not to productionize - learn ml production with phoebe">
+<meta property="og:description" content="Session 6 of 6. The 87 percent that has no survey behind it, the four questions that decide ship, hold or stop, and a one-page decision memo.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/courses/06-when-not-to-productionize.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="When not to productionize - learn ml production with phoebe">
+<meta name="twitter:description" content="Session 6 of 6. The kill decision and the one-page production decision memo.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 6 · When not to productionize - learn ml production with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-ml-production-with-phoebe</a> / Session 6 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ML in Production: The Leader Cut · Session 6 of 6</div>
+    <h1>When not to <span class="accent">productionize</span></h1>
+    <p class="sub">Every earlier session made one question answerable: should this model be running at all? Not "is it accurate", which session 2 settled against a baseline, and not "is it safe to ship", which sessions 3 to 5 settled with a rollout, a retrain policy and monitoring. The question is whether the value it adds over the simplest alternative is worth what it costs to keep alive, and whether anyone would notice the day it stopped being true. Tonight starts with the failure-rate numbers every ML strategy deck quotes, traced to where they came from, then turns the kill decision into four questions and a one-page memo that is allowed to say stop.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Advanced</span>
+      <span class="chip audience">Leaders who sign the decision</span>
+      <span class="chip audience">Builders who retire what they built</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Folklore, criteria, retirement</span>
+      <span class="a3" style="flex:5">18-40 · Capstone: the decision memo</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Stopping is the decision organisations are worst at, because a model in production has a team, a dashboard and a line in someone's objectives, and switching it off reads as failure. It is not. Session 4's bench showed a real case where the right production answer was a one-line rule, and another where the most diligent-looking policy was worse than having no model. A team that can say "stop" with evidence is a team whose "ship" means something.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = fill it in for your own system</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> The true source of three failure-rate numbers you will hear again, four questions that decide ship, hold or stop, a retirement sequence that does not break the systems that quietly depend on the model, and a signed one-page production decision memo for one real model.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers the failure-rate folklore</span>
+      <h2>Three famous numbers, traced</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">Kill decisions are often argued with a statistic: "most ML projects never reach production anyway." Three versions travel. Each was read at its source for this session, and only one of them is a survey result.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three cards. 87 percent never reach production: VentureBeat 2019, a sponsored write-up of a conference panel, the text says only 13 percent or one in ten, no survey cited. 85 percent of AI projects fail: Gartner 2018, actually a forecast that 85 percent of AI projects will deliver erroneous outcomes due to bias through 2022. 53 percent reach production: Gartner's 2019 survey average, 54 percent in the 2021 survey of 699 respondents.">
+        <defs>
+          <filter id="s6aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="61" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s6aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s6aH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s6aL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s6aS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s6aB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s6aR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s6aV { font: 800 20px Inter, sans-serif; fill: #6B2049; }
+          .s6aN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s6aH" x="30" y="26">WHAT EACH NUMBER IS, READ AT ITS SOURCE</text>
+
+        <g filter="url(#s6aSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="46" width="250" height="190" rx="10" transform="rotate(-0.6 165 141)" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="315" y="46" width="250" height="190" rx="10" transform="rotate(0.5 440 141)" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="590" y="46" width="250" height="190" rx="10" transform="rotate(-0.4 715 141)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <path d="M60 110 L270 110 M335 110 L545 110 M610 110 L820 110" stroke="#E2CBD7" stroke-width="1.5"/>
+        </g>
+
+        <text class="s6aV" x="60" y="84">87%</text>
+        <text class="s6aL" x="120" y="82">never reach production</text>
+        <text class="s6aS" x="60" y="132">VentureBeat, 19 July 2019</text>
+        <text class="s6aS" x="60" y="150">"Sponsored" write-up of a panel</text>
+        <text class="s6aS" x="60" y="168">Text: "only 13% ... or just one</text>
+        <text class="s6aS" x="60" y="186">out of every 10", which disagree</text>
+        <text class="s6aR" x="60" y="218">no survey cited</text>
+
+        <text class="s6aV" x="335" y="84">85%</text>
+        <text class="s6aL" x="395" y="82">of AI projects fail</text>
+        <text class="s6aS" x="335" y="132">Gartner release, 13 Feb 2018</text>
+        <text class="s6aS" x="335" y="150">Says 85 percent "will deliver</text>
+        <text class="s6aS" x="335" y="168">erroneous outcomes due to bias"</text>
+        <text class="s6aS" x="335" y="186">through 2022</text>
+        <text class="s6aR" x="335" y="218">a forecast about bias</text>
+
+        <text class="s6aV" x="610" y="84">53%</text>
+        <text class="s6aL" x="670" y="82">reach production</text>
+        <text class="s6aS" x="610" y="132">Gartner 2019 AI survey average</text>
+        <text class="s6aS" x="610" y="150">2021 survey: 54 percent, pilot</text>
+        <text class="s6aS" x="610" y="168">to production, 699 respondents</text>
+        <text class="s6aS" x="610" y="186">in the US, Germany and the UK</text>
+        <text class="s6aB" x="610" y="218">a survey: quote it as one</text>
+
+        <text class="s6aN" x="30" y="266">Two of the three are not measurements of ML projects failing. The one that is, is self-reported by respondents.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - only the ochre card is a survey result; argue a kill from your own evidence, not from the red ones</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Why the folklore matters for a kill decision<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A failure rate cuts both ways in a meeting. "Most projects fail" is used to excuse a project that is failing and to dismiss one that is working. Neither use is honest, because none of the three numbers says anything about your model. The 87 percent comes from a sponsored conference write-up in which two speakers, from IBM and Gap, discussed why projects stall; the article's own sentence says "13%" and "one out of every 10" in the same breath and cites no study. The 85 percent is a 2018 Gartner prediction about biased outcomes, retold as a failure rate. The 53 percent is a real survey average, from Gartner's 2019 AI in Organizations survey, and a later survey put it at 54 percent; it is what respondents reported about their own organisations.</p>
+        <p>The professional norm is simple: when a number enters a production decision, name its source and what kind of evidence it is. For a kill decision, the only evidence that counts is the model's own: its gap over the baseline, what it costs to run, and what happens when it is off.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What the 53 percent does and does not tell you<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A survey average says that, among respondents, roughly half of AI projects were reported as reaching production. It does not say the other half should have, and it does not say the half that shipped were worth running. A project stopped at the scoping memo of session 2 counts as "did not reach production" and may be the best decision in the portfolio. Read the number as a base rate for planning, never as a verdict on a single project.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>A sibling page got here first.</strong> The same two figures, the 85 percent forecast and the 87 percent claim, are treated as not stated as fact on the revenue-model session of the Ship Playbook shelf. When two independent traces reach the same verdict, that is the moment to stop quoting a number, not the moment to find a third source for it.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers the kill criteria</span>
+      <h2>Four questions decide ship, hold or stop</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">Every question below was built in an earlier session, and each has a number behind it. The order matters: the first one can end the discussion before any of the others is asked, and it is the one teams skip.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A decision tree of four questions. First: does the model beat the no-model rule at the real label delay? If no, stop and ship the rule. Second: is the value of that gap larger than the cost of running the model, retrains, monitoring and on-call? If no, stop. Third: is the ML Test Score, the minimum section, above zero with no box unowned? If no, hold. Fourth: is there a rehearsed rollback and a fallback someone can run? If no, hold. If yes to all four, ship with a review date.">
+        <defs>
+          <filter id="s6bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="67" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s6bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6bH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s6bL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s6bS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s6bB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s6bR { font: 800 12px Inter, sans-serif; fill: #991B1B; }
+          .s6bV { font: 800 12px Inter, sans-serif; fill: #6B2049; }
+          .s6bN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s6bH" x="30" y="26">THE KILL TREE: ASK IN THIS ORDER, STOP AT THE FIRST NO</text>
+
+        <g filter="url(#s6bSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="46" width="330" height="52" rx="10" transform="rotate(-0.5 205 72)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="40" y="118" width="330" height="52" rx="10" transform="rotate(0.4 205 144)" fill="#FFFFFF"/>
+          <rect x="40" y="190" width="330" height="52" rx="10" transform="rotate(-0.3 205 216)" fill="#FFFFFF"/>
+          <rect x="40" y="262" width="330" height="52" rx="10" transform="rotate(0.5 205 288)" fill="#FFFFFF"/>
+          <rect x="470" y="46" width="200" height="52" rx="10" transform="rotate(0.6 570 72)" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="470" y="118" width="200" height="52" rx="10" transform="rotate(-0.5 570 144)" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="470" y="190" width="200" height="52" rx="10" transform="rotate(0.4 570 216)" fill="#FBEFF5"/>
+          <rect x="470" y="262" width="200" height="52" rx="10" transform="rotate(-0.4 570 288)" fill="#FBEFF5"/>
+          <rect x="700" y="262" width="150" height="52" rx="10" transform="rotate(0.6 775 288)" fill="#FBEFF5" stroke="#6B2049"/>
+          <path d="M372 72 L464 72" marker-end="url(#s6bAr)"/>
+          <path d="M372 144 L464 144" marker-end="url(#s6bAr)"/>
+          <path d="M372 216 L464 216" marker-end="url(#s6bAr)"/>
+          <path d="M372 288 L464 288" marker-end="url(#s6bAr)"/>
+          <path d="M205 100 L205 114" marker-end="url(#s6bAr)"/>
+          <path d="M205 172 L205 186" marker-end="url(#s6bAr)"/>
+          <path d="M205 244 L205 258" marker-end="url(#s6bAr)"/>
+          <path d="M290 316 C400 340 640 340 760 318" marker-end="url(#s6bAr)"/>
+        </g>
+
+        <text class="s6bL" x="56" y="68">1 · Beats the no-model rule at the</text>
+        <text class="s6bL" x="56" y="86">real label delay? (sessions 2, 4)</text>
+        <text class="s6bL" x="56" y="140">2 · Gap worth more than retrains,</text>
+        <text class="s6bL" x="56" y="158">monitoring and on-call? (sessions 4, 5)</text>
+        <text class="s6bL" x="56" y="212">3 · ML Test Score above 0, every box</text>
+        <text class="s6bL" x="56" y="230">owned? (session 1)</text>
+        <text class="s6bL" x="56" y="284">4 · Rollback rehearsed, fallback</text>
+        <text class="s6bL" x="56" y="302">runnable? (session 3)</text>
+
+        <text class="s6bS" x="418" y="64" text-anchor="middle">no</text>
+        <text class="s6bS" x="418" y="136" text-anchor="middle">no</text>
+        <text class="s6bS" x="418" y="208" text-anchor="middle">no</text>
+        <text class="s6bS" x="418" y="280" text-anchor="middle">no</text>
+        <text class="s6bS" x="218" y="112">yes</text>
+        <text class="s6bS" x="218" y="184">yes</text>
+        <text class="s6bS" x="218" y="256">yes</text>
+
+        <text class="s6bR" x="570" y="68" text-anchor="middle">STOP</text>
+        <text class="s6bS" x="570" y="86" text-anchor="middle">ship the rule instead</text>
+        <text class="s6bR" x="570" y="140" text-anchor="middle">STOP</text>
+        <text class="s6bS" x="570" y="158" text-anchor="middle">it costs more than it adds</text>
+        <text class="s6bV" x="570" y="212" text-anchor="middle">HOLD</text>
+        <text class="s6bS" x="570" y="230" text-anchor="middle">pay the weakest section</text>
+        <text class="s6bV" x="570" y="284" text-anchor="middle">HOLD</text>
+        <text class="s6bS" x="570" y="302" text-anchor="middle">no safe off switch yet</text>
+        <text class="s6bV" x="775" y="284" text-anchor="middle">SHIP</text>
+        <text class="s6bS" x="775" y="302" text-anchor="middle">with a review date</text>
+        <text class="s6bS" x="500" y="344" text-anchor="middle">yes to all four</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - two of the four exits are stop, and the first question is the one the ochre box asks before anyone looks at accuracy</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Question 1 is Rule 1, measured<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Zinkevich's first rule, "Don't be afraid to launch a product without machine learning", becomes a test once the no-model rule has a number. On the Elec2 bench with labels 1.5 hours late, repeating the last label scores 74.63 percent and the best model policy, weekly refits on all history, scores 73.51. That model fails question 1 and the tree stops: ship the rule. With labels a day late the rule falls to 65.35 and the same model, at 73.55, passes by 8.20 points. The same model, the same market: the label delay decided it.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Question 2 puts a price on the gap<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A model that clears the baseline still has to pay its way. The bench prices the retraining part: at $500 a retrain, a figure you set, weekly refits cost $65,000 over the replay and the alarm policy $3,000 for most of the same accuracy. Add what session 5 wired up, the monitoring and the on-call behind every alert, and what session 1 counted, the nine boxes around the model. Then ask the business owner what one point of accuracy is worth in their unit, calls, pounds, hours. If the answer times the gap is smaller than the running cost, the honest exit is stop, however good the model looks on its own.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Questions 3 and 4 hold, they do not kill<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A readiness score of 0, "more of a research project than a productionized system" in Breck et al.'s words, or a box nobody owns, is a reason to hold and pay the debt, not a reason to cancel a model that is worth running. The same goes for a rollback that has never been rehearsed or a fallback no one can run: fix it, then ship. Keeping "hold" separate from "stop" stops teams from killing good models for fixable reasons and from shipping bad ones because the infrastructure happens to be ready.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers retiring a model safely</span>
+      <h2>Stopping is a deployment too</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">A model that is switched off in one step breaks whatever quietly depended on it. Sculley et al. call those systems undeclared consumers: systems "silently using the output of a given model as an input to another system". Retirement runs the rollout of session 3 in reverse, with the fallback as the new version.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Retirement as four stages on a rail: find the consumers of the model's output, run the fallback in shadow beside the model, switch traffic to the fallback with the model kept warm for rollback, then archive the model, its data and its decision memo and leave a note at the old endpoint.">
+        <defs>
+          <filter id="s6cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="71" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s6cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s6cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6cH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s6cL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s6cS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s6cB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s6cN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s6cH" x="30" y="26">RETIREMENT: THE ROLLOUT IN REVERSE, WITH THE FALLBACK AS THE NEW VERSION</text>
+
+        <g filter="url(#s6cSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="56" width="180" height="110" rx="10" transform="rotate(-0.6 130 111)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="245" y="56" width="180" height="110" rx="10" transform="rotate(0.5 335 111)" fill="#FFFFFF"/>
+          <rect x="450" y="56" width="180" height="110" rx="10" transform="rotate(-0.4 540 111)" fill="#FBEFF5"/>
+          <rect x="655" y="56" width="185" height="110" rx="10" transform="rotate(0.5 747 111)" fill="url(#s6cHc)"/>
+          <path d="M222 111 L239 111" marker-end="url(#s6cAr)"/>
+          <path d="M427 111 L444 111" marker-end="url(#s6cAr)"/>
+          <path d="M632 111 L649 111" marker-end="url(#s6cAr)"/>
+          <path d="M540 170 C540 206 340 206 336 172" stroke-dasharray="5 5" marker-end="url(#s6cAr)"/>
+        </g>
+
+        <text class="s6cB" x="130" y="82" text-anchor="middle">1 · find consumers</text>
+        <text class="s6cS" x="130" y="104" text-anchor="middle">who reads the output</text>
+        <text class="s6cS" x="130" y="120" text-anchor="middle">table or endpoint?</text>
+        <text class="s6cS" x="130" y="136" text-anchor="middle">tell each one a date</text>
+        <text class="s6cL" x="335" y="82" text-anchor="middle">2 · shadow the fallback</text>
+        <text class="s6cS" x="335" y="104" text-anchor="middle">run the rule beside</text>
+        <text class="s6cS" x="335" y="120" text-anchor="middle">the model, log both,</text>
+        <text class="s6cS" x="335" y="136" text-anchor="middle">confirm the gap</text>
+        <text class="s6cL" x="540" y="82" text-anchor="middle">3 · switch</text>
+        <text class="s6cS" x="540" y="104" text-anchor="middle">fallback serves,</text>
+        <text class="s6cS" x="540" y="120" text-anchor="middle">model kept warm</text>
+        <text class="s6cS" x="540" y="136" text-anchor="middle">for a set period</text>
+        <text class="s6cL" x="747" y="82" text-anchor="middle">4 · archive</text>
+        <text class="s6cS" x="747" y="104" text-anchor="middle">model, data, memo;</text>
+        <text class="s6cS" x="747" y="120" text-anchor="middle">a note at the old</text>
+        <text class="s6cS" x="747" y="136" text-anchor="middle">endpoint saying why</text>
+        <text class="s6cS" x="440" y="220" text-anchor="middle">roll back to the model if a consumer breaks</text>
+
+        <text class="s6cN" x="30" y="252">The ochre step is the one that fails most often: nobody knew the output table had readers.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - a model is retired the way it was launched: in stages, reversibly, with the consumers told first</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Why the note at the old endpoint matters<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A model that vanishes leaves questions: was it broken, was it replaced, can it come back? A short note where it used to live, with the date, the decision memo and where the archive is, answers them for the next team, which may be yours in a year. Sculley et al.'s warning about dead experimental codepaths applies here too: code nobody runs any more should be deleted, and a retired model's serving path is exactly that code.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Stop is also a review outcome, not only a launch outcome<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Session 4's bench shows why a model that passed the tree at launch can fail it later. A never-retrained Elec2 model scores 68.70 percent over the replay against 65.35 for the no-model rule at a one-day delay, but its accuracy sinks into the low 60s for long stretches, blocks where the rule is ahead. Put a review date on every "ship", re-run the four questions on it with the current numbers, and let the answer be stop. Formal validation and sign-off of that review, where a regulator requires it, belongs to <a href="https://phoebefu6.github.io/learn-model-risk-with-phoebe/courses/p8-ongoing-monitoring.html">Model Risk ↗</a>.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The electricity benchmark's own kill decision.</strong> Žliobaitė's 2013 note on Elec2 is, in effect, a stop memo for a research habit: many adaptive methods published on the dataset did not beat repeating the current label, 85.3 percent on the full file, and a detector firing at random improved accuracy. Her recommendation, compare every result against that rule, is question 1 of the tree, written in 2013.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>Capstone: the one-page production decision memo</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">One page, six blocks, one decision at the top. It pulls a number from every earlier session, which is why it is the capstone: if a block cannot be filled, the session that owns it is where to go back. Use a real model you own or approve. If you have none, use the Elec2 price-direction model; a constructed example sits after the steps.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The memo as one page: a decision line at the top reading ship, hold or stop, then five blocks, each fed by a session: baseline gap from sessions 2 and 4, running cost from sessions 4 and 5, readiness from session 1, rollout and rollback from session 3, and the review date and stop rule.">
+        <defs>
+          <filter id="s6dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="73" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s6dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6dH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s6dL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s6dS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s6dB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s6dA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s6dN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s6dH" x="30" y="26">ONE PAGE: THE DECISION FIRST, THE EVIDENCE UNDER IT</text>
+
+        <g filter="url(#s6dSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="220" y="40" width="440" height="200" rx="8" transform="rotate(-0.4 440 140)" fill="#FFFFFF"/>
+          <rect x="240" y="54" width="400" height="30" rx="6" fill="#FDF1DE" stroke="#9A5B00"/>
+          <path d="M250 104 L630 104 M250 130 L630 130 M250 156 L630 156 M250 182 L630 182 M250 208 L630 208" stroke="#E2CBD7" stroke-width="1.5"/>
+          <path d="M150 110 L232 110" marker-end="url(#s6dAr)"/>
+          <path d="M150 162 L232 162" marker-end="url(#s6dAr)"/>
+          <path d="M730 110 L648 110" marker-end="url(#s6dAr)"/>
+          <path d="M730 162 L648 162" marker-end="url(#s6dAr)"/>
+          <path d="M730 204 L648 204" marker-end="url(#s6dAr)"/>
+        </g>
+
+        <text class="s6dB" x="440" y="74" text-anchor="middle">DECISION: ship / hold / stop, signed and dated</text>
+        <text class="s6dL" x="260" y="122">1 · the gap over the no-model rule</text>
+        <text class="s6dL" x="260" y="148">2 · the running cost, and value per point</text>
+        <text class="s6dL" x="260" y="174">3 · readiness: the minimum section</text>
+        <text class="s6dL" x="260" y="200">4 · rollout, rollback, fallback</text>
+        <text class="s6dL" x="260" y="226">5 · review date and stop rule</text>
+        <text class="s6dA" x="140" y="114" text-anchor="end">sessions 2, 4</text>
+        <text class="s6dA" x="140" y="166" text-anchor="end">sessions 4, 5</text>
+        <text class="s6dA" x="740" y="114">session 1</text>
+        <text class="s6dA" x="740" y="166">session 3</text>
+        <text class="s6dA" x="740" y="208">sessions 2, 5</text>
+
+        <text class="s6dN" x="30" y="266">If a block cannot be filled, the decision is hold, and the session named beside it is where the work is.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the decision line sits on top so the reader never has to reach the end to learn what was decided</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Write the decision first.</strong> One word and a sentence, signed and dated. Writing it before the evidence feels backwards; it forces the evidence blocks to argue for or against something specific.</p>
+        <div class="prompt-box good"><span class="label">★ Block 0 · the decision</span>Model: ____________________   Decides: ____________________
+DECISION:  SHIP / HOLD / STOP        because: ____________________
+Signed: ________ (business owner)   ________ (model owner)   Date: ________</div>
+      </div>
+      <div class="step">
+        <p><strong>The gap over the no-model rule, at the real label delay.</strong> This is question 1 of the tree. If the gap is zero or negative, the decision is stop and the rest of the memo describes the retirement.</p>
+        <div class="prompt-box good"><span class="label">★ Block 1 · the baseline gap</span>No-model rule: ________________________ (one sentence a clerk could run)
+Measured label delay: median ______  90th percentile ______
+Rule accuracy at that delay: ______   Model accuracy: ______
+Gap: ______ points   (a negative gap means STOP: ship the rule)</div>
+      </div>
+      <div class="step">
+        <p><strong>The running cost against the value of the gap.</strong> Retrains priced the way session 4 priced them, plus monitoring and on-call from session 5. Value per point comes from the business owner, in their unit.</p>
+        <div class="prompt-box good"><span class="label">★ Block 2 · worth it?</span>Retrain policy: ______________   retrains per year: ____ x cost per retrain ____ = ______
+Monitoring and on-call per year: ______   Serving and data per year: ______
+Total running cost per year: ______
+Value of one accuracy point per year (business owner): ______
+Gap x value per point = ______   vs running cost ______   -&gt; worth it: yes / no</div>
+      </div>
+      <div class="step">
+        <p><strong>Readiness and safety.</strong> The minimum section score from session 1, the boxes without owners, and the rollback and fallback from session 3. Any gap here is hold, not stop.</p>
+        <div class="prompt-box good"><span class="label">★ Block 3 · readiness and the off switch</span>ML Test Score (minimum section): ____   weakest section: ____________
+Boxes with no owner: ______________________
+Rollout pattern: shadow / canary / blue-green / all at once
+Rollback: trigger ________  owner ________  last rehearsed ________  time taken ______
+Fallback if switched off: ______________________ (runnable today: yes / no)</div>
+      </div>
+      <div class="step">
+        <p><strong>The review date and the stop rule.</strong> Every ship gets a date on which the four questions are asked again with current numbers, and a rule written now that would make the answer stop.</p>
+        <div class="prompt-box good"><span class="label">★ Block 4 · when we ask again</span>Next review: ________
+We stop if: the gap over the no-model rule falls below ____ points for ____ weeks,
+            or the running cost exceeds ______ per year,
+            or the fallback stops being runnable.
+Known consumers to notify on stop: ______________________</div>
+      </div>
+    </div>
+
+    <div class="callout example">
+      <span class="ex-pill">Constructed</span>
+      <p><strong>Northline Grid, a constructed electricity retailer, real bench numbers.</strong> Northline predicts the NSW half-hour price direction to time its hedges. Its settlement feed gives it the true direction a day late. Block 1: the no-model rule scores 65.35 percent, the weekly-refit model 73.55, a gap of 8.20 points. Block 2: 130 retrains at $500 is $65,000; the alarm policy gets 72.78 percent for $3,000, so the memo switches the policy to the alarm and keeps a 7.43-point gap. Decision: ship, review in a quarter. Then the data team negotiates a feed that delivers labels within 1.5 hours. At that delay the rule scores 74.63 and the best model policy 73.51. The same memo, re-run on review day, says stop: ship the rule. Northline, the hedging use and its costs are constructed; every accuracy figure is what the session 4 bench prints for that setting.</p>
+    </div>
+
+    <div class="wyb">
+      <span class="wyb-pill">What you would build</span>
+      <p>Put the four questions in code next to the model, fed by the numbers the replay harness from session 4 and the readiness file from session 1 already produce, so the review day re-runs the tree instead of re-arguing it.</p>
+      <div class="prompt-box good"><span class="label">★ decision.py</span>def decide(model_acc, rule_acc, value_per_point, running_cost,
+           test_score, unowned_boxes, rollback_rehearsed, fallback_runnable):
+    gap = model_acc - rule_acc                     # points, at the real label delay
+    if gap &lt;= 0:
+        return "STOP", "ship the no-model rule"
+    if gap * value_per_point &lt; running_cost:
+        return "STOP", "costs more than it adds"
+    if test_score == 0 or unowned_boxes:
+        return "HOLD", "pay the weakest section, give every box an owner"
+    if not (rollback_rehearsed and fallback_runnable):
+        return "HOLD", "no safe off switch yet"
+    return "SHIP", "with a review date"
+
+# value_per_point and running_cost are yours; your numbers will differ.</div>
+      <p>Scheduling the review job and wiring it to the registry is tooling; <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b6-model-deploy-monitor.html">DataOps session b6 ↗</a> builds it. If the memo is going to a board, the one-page structure is the same one <a href="https://phoebefu6.github.io/learn-ml-strategy-with-phoebe/courses/a6-the-one-page-memo.html">ML Strategy a6 ↗</a> uses for what to fix next.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>After the series</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Finish the memo and get both signatures.</strong> The business owner signs block 2's value per point; the model owner signs everything else. A memo with one signature is a draft.</li>
+      <li><strong>Run the four questions on a model already in production</strong> that nobody has reviewed in a year. Write down which question you could not answer; that is the finding.</li>
+      <li><strong>Replace one failure-rate statistic</strong> in a strategy deck you own with the model's own evidence, or with the survey figure quoted as a survey.</li>
+      <li><strong>Pick one model to retire,</strong> even hypothetically, and list its consumers. If you cannot list them, block 1 of the retirement sequence is your next piece of work.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 6 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">1 · A strategy deck says "87 percent of ML projects never reach production (VentureBeat)". What is accurate?</p>
+      <button class="qopt" type="button">A · It is a Gartner survey of 699 respondents</button>
+      <button class="qopt" type="button">B · It is a forecast about biased outcomes through 2022</button>
+      <button class="qopt" type="button">C · It is a measured failure rate from 36 Google teams</button>
+      <button class="qopt" type="button">D · It comes from a 2019 sponsored write-up of a conference panel that cites no survey, and whose own sentence says both "13%" and "one out of every 10"</button>
+      <p class="qwhy">A describes the 2021 Gartner survey behind the 54 percent, B the 2018 Gartner forecast behind the "85 percent fail" retelling, and C the ML Test Score paper, which measured test adoption. Only D is where the 87 comes from.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="1">
+      <p class="qtext">2 · A model beats the no-model rule by 8.20 points, but its readiness score is 0 because nothing in monitoring is done. What does the kill tree say?</p>
+      <button class="qopt" type="button">A · Stop, because a score of 0 means the project failed</button>
+      <button class="qopt" type="button">B · Hold: the model has passed questions 1 and 2 if the gap is worth its cost, and a readiness gap is fixable debt, so pay the weakest section and then ship</button>
+      <button class="qopt" type="button">C · Ship, because accuracy beats the baseline</button>
+      <button class="qopt" type="button">D · Retrain it weekly until the score rises</button>
+      <p class="qwhy">Questions 3 and 4 hold, they do not kill. Keeping hold separate from stop prevents cancelling a model worth running for a fixable reason, and prevents shipping one with no monitoring. Retraining does not add monitoring.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">3 · Why does retirement start with finding the model's consumers?</p>
+      <button class="qopt" type="button">A · Other systems may silently use the model's output as their input, Sculley et al.'s undeclared consumers, and switching it off in one step breaks them; they need a date, and the switch needs a rollback</button>
+      <button class="qopt" type="button">B · Because consumers must vote on whether to stop</button>
+      <button class="qopt" type="button">C · Because the model's accuracy depends on how many consumers it has</button>
+      <button class="qopt" type="button">D · Because retirement is only allowed once consumers stop reading the output on their own</button>
+      <p class="qwhy">Retirement is a deployment of the fallback, run in stages like session 3's rollout. The consumers are the part of the system most likely to be unknown, which is why they come first.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">VentureBeat 2019, "Why do 87% of data science projects never make it into production?"</span><span class="note">Read at source in an archived copy: sponsored, a Transform 2019 panel write-up, the 13 percent and one-in-ten sentence, no survey cited</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Gartner press releases, 13 Feb 2018 and 22 Aug 2022</span><span class="note">Read at source in archived copies: the 85 percent bias forecast, the 2019 survey's 53 percent average and the 2021 survey's 54 percent from 699 respondents. The 2020 release often cited for 53 percent was not opened and is reported</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Zinkevich Rule 1, Breck et al. score bands, Sculley et al. undeclared consumers and dead codepaths</span><span class="note">Read at source; each used as one question of the kill tree or one step of retirement</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Session 4 bench numbers and Žliobaitė 2013</span><span class="note">Every accuracy figure is one the bench prints; the 85.3 percent is read at source and reproduced in this build</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Northline Grid and the decision memo values</span><span class="note">Constructed company and costs, labelled so; the accuracy figures inside it are real bench output</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 6 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Name the source of every rate</b><span>87 percent: no survey. 85 percent: a bias forecast. 53 percent: a self-reported survey.</span></div>
+      <div class="cheat-item"><b>Question 1: beat the rule</b><span>At the real label delay. On Elec2 at 1.5 hours the rule wins, 74.63 to 73.51.</span></div>
+      <div class="cheat-item"><b>Question 2: worth the cost</b><span>Gap x value per point against retrains, monitoring and on-call.</span></div>
+      <div class="cheat-item"><b>Hold is not stop</b><span>Readiness and rollback gaps are debts to pay, not reasons to cancel.</span></div>
+      <div class="cheat-item"><b>Retire in stages</b><span>Consumers first, shadow the fallback, switch with the model warm, archive with a note.</span></div>
+      <div class="cheat-item"><b>Every ship has a review date</b><span>Re-run the four questions with current numbers, and let the answer be stop.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>That is the whole cut: a readiness sheet, a scoping memo, a rollout plan, a retrain policy with a price, an alert-to-action table and a signed decision memo. Take the memo to the next review of a model you own. The tooling that carries these decisions out lives on the neighbouring shelves: DataOps for the pipelines, Model Evaluation for drift statistics, Model Risk for validation. Back to the course home for the knowledge map.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 6 of 6 · learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="05-monitor-what-you-will-act-on.html">← Prev: Monitor what you will act on</a> &nbsp;·&nbsp; <a href="../index.html">Course home</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=2"></script>
+</body>
+</html>

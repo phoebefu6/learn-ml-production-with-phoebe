@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 1 of 6. The ML project lifecycle as a loop, the small box of ML code inside a production system, and the ML Test Score that grades readiness by its weakest section. A one-page readiness sheet for a system you own.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="The first deployment is the middle - learn ml production with phoebe">
+<meta property="og:description" content="Session 1 of 6. Shipping the model is where the expensive part starts. The lifecycle loop, the hidden technical debt around the small box, and a readiness score that takes the minimum.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/courses/01-the-first-deployment-is-the-middle.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The first deployment is the middle - learn ml production with phoebe">
+<meta name="twitter:description" content="Session 1 of 6. The lifecycle loop, the small box, and readiness scored by the weakest section.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 1 · The first deployment is the middle - learn ml production with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-ml-production-with-phoebe</a> / Session 1 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ML in Production: The Leader Cut · Session 1 of 6</div>
+    <h1>The first deployment is <span class="accent">the middle</span></h1>
+    <p class="sub">Most ML projects are planned as if the launch were the finish line: scope it, get the data, train the model, deploy, done. Production turns that line into a loop. The data keeps moving, the model keeps aging, and the code that surrounds the model is many times larger than the model itself and carries debts no notebook ever showed you. Tonight is the map for the whole series: the lifecycle as a loop, the small box of ML code inside the big box of system, and a readiness score that is only as good as its weakest part. You leave with a one-page readiness sheet for a system you own or are about to approve.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Advanced</span>
+      <span class="chip audience">Leaders who approve ML launches</span>
+      <span class="chip audience">Builders who have to run them</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Loop, small box, weakest section</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: one-page readiness sheet</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Every session in this series is a decision a leader signs and a team then lives with: what to scope, how to roll out, when to retrain, what to watch, when to stop. None of them is a tooling choice, and all of them get made by default when nobody makes them on purpose. This first session sets out why they exist at all. A model in production is not a finished artifact; it is the smallest part of a system that has to keep working while the world it predicts moves underneath it.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = fill it in for your own system</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> A one-page readiness sheet for one real ML system: its boxes and their owners, its ML Test Score by section with the minimum taken honestly, and the three debts you will pay first. Plus the sentence that reframes every launch review: "the first deployment is the middle of this project, not the end."</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers the ML project lifecycle</span>
+      <h2>The lifecycle is a loop with a launch in the middle</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">Andrew Ng's Machine Learning in Production course lays the project out in four stages: scoping, data, modeling, deployment. Drawn as a line it looks like a plan with an end. Drawn the way it actually runs, three of the arrows point backwards, and the launch sits in the middle of the timeline, not at its right edge.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 346" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The four lifecycle stages, scoping, data, modeling and deployment, in a row with forward arrows. Three arrows loop backwards: modeling back to data when error analysis asks for more or better data, deployment back to data when the live data drifts, deployment back to modeling when the model has to be retrained. Above, a timeline with the first deployment marked in the middle and the hatched stretch after it labelled operate, monitor, retrain, retire.">
+        <defs>
+          <filter id="s1aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s1aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s1aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s1aH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s1aL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s1aS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s1aB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s1aV { font: 800 13px Inter, sans-serif; fill: #6B2049; }
+          .s1aN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s1aH" x="30" y="26">THE PROJECT AS IT RUNS: FOUR STAGES, THREE ARROWS BACK</text>
+
+        <g filter="url(#s1aSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- timeline -->
+          <path d="M60 62 L820 62" stroke="#6A4B5C"/>
+          <rect x="440" y="52" width="380" height="20" rx="3" transform="rotate(0.3 630 62)" fill="url(#s1aHc)"/>
+          <path d="M440 44 L440 82" stroke="#9A5B00" stroke-width="3"/>
+          <!-- stages -->
+          <rect x="60" y="120" width="150" height="54" rx="10" transform="rotate(-1 135 147)" fill="#FFFFFF"/>
+          <rect x="250" y="120" width="150" height="54" rx="10" transform="rotate(0.8 325 147)" fill="#FBEFF5"/>
+          <rect x="440" y="120" width="150" height="54" rx="10" transform="rotate(-0.6 515 147)" fill="#FFFFFF"/>
+          <rect x="630" y="120" width="190" height="54" rx="10" transform="rotate(0.7 725 147)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <!-- forward -->
+          <path d="M212 147 L244 147" marker-end="url(#s1aAr)"/>
+          <path d="M402 147 L434 147" marker-end="url(#s1aAr)"/>
+          <path d="M592 147 L624 147" marker-end="url(#s1aAr)"/>
+          <!-- back loops -->
+          <path d="M500 178 C480 208 380 208 352 182" marker-end="url(#s1aAr)"/>
+          <path d="M760 178 C740 228 560 228 532 182" marker-end="url(#s1aAr)"/>
+          <path d="M824 152 C866 200 866 282 740 282 L380 282 C300 282 292 226 306 184" marker-end="url(#s1aAr)"/>
+        </g>
+
+        <text class="s1aB" x="440" y="38" text-anchor="middle">first deployment</text>
+        <text class="s1aS" x="250" y="90" text-anchor="middle">before launch: weeks to months</text>
+        <text class="s1aL" x="630" y="90" text-anchor="middle">after launch: operate, monitor, retrain, retire</text>
+
+        <text class="s1aV" x="135" y="144" text-anchor="middle">Scoping</text>
+        <text class="s1aS" x="135" y="162" text-anchor="middle">what to work on</text>
+        <text class="s1aV" x="325" y="144" text-anchor="middle">Data</text>
+        <text class="s1aS" x="325" y="162" text-anchor="middle">define, baseline, label</text>
+        <text class="s1aV" x="515" y="144" text-anchor="middle">Modeling</text>
+        <text class="s1aS" x="515" y="162" text-anchor="middle">train, error analysis</text>
+        <text class="s1aV" x="725" y="144" text-anchor="middle">Deployment</text>
+        <text class="s1aS" x="725" y="162" text-anchor="middle">serve, monitor, maintain</text>
+
+        <text class="s1aS" x="426" y="222" text-anchor="middle">error analysis asks for better data</text>
+        <text class="s1aS" x="646" y="240" text-anchor="middle">retrain when the model ages</text>
+        <text class="s1aS" x="560" y="300" text-anchor="middle">live data drifts: new data to collect and label</text>
+
+        <text class="s1aN" x="30" y="328">Stages as named in Ng's Machine Learning in Production. The arrows back are the work nobody puts in the first plan.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the launch sits at the middle of the timeline, and everything to its right is recurring cost</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>What each stage decides, and who should sign it<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Scoping</strong> decides what to work on and what success means, in business terms, before any data is touched. Session 2. <strong>Data</strong> decides what the inputs and labels are, how they are defined consistently, and what baseline the model has to beat. <strong>Modeling</strong> trains, then does error analysis to decide whether the next gain comes from the model or the data. <strong>Deployment</strong> is where the system meets real traffic: how it rolls out (session 3), how it stays fresh (session 4), what is watched (session 5).</p>
+        <p>The leader's job is at the two ends. Scoping is the only stage where "no" is still cheap. Deployment is the stage where the recurring bill starts, and it is the one most plans budget as a single line item.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>The proof-of-concept to production gap<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Ng's lectures name the distance between "it works in the notebook" and "it works for customers" the proof of concept to production gap (reported, from compiled lecture notes; the official notes sit behind the course login). The same lectures say that in many projects maybe only 5 to 10 percent of the work is the machine learning code itself. Treat that as a practitioner's estimate, not a measurement: it is a different figure from the one in Part 2, and neither paper nor lecture measured it.</p>
+        <p>What closes the gap is not a better model. It is the work the next five sessions are about: a scoped problem with a baseline, a rollout that can be reversed, a retrain policy somebody chose, monitoring wired to actions, and a standing willingness to switch it off.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>A model that was "up" the whole time.</strong> Session 4 replays two and a half years of a real electricity market, Elec2, against a model trained on its first four weeks and never touched again. Nothing crashed. Every prediction was served on time. And on the same rows, a policy that refits once a quarter is 3.75 accuracy points ahead of it, because the market the model learned no longer existed. A system can pass every uptime check and still be quietly wrong, which is the whole reason the right half of the timeline exists.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers Sculley et al. 2015, hidden technical debt</span>
+      <h2>The model is the small box</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">In 2015 ten Google engineers led by D. Sculley published "Hidden Technical Debt in Machine Learning Systems" at NeurIPS. Its first figure is the most reproduced picture in production ML: a tiny black box labelled ML Code, surrounded by nine much larger boxes of everything else a real system needs. The caption says only a small fraction of real-world ML systems is the ML code. Here it is redrawn, with the one thing everyone budgets for in ochre.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sculley et al. 2015 Figure 1 redrawn: nine large boxes, configuration, data collection, feature extraction, data verification, machine resource management, analysis tools, process management tools, serving infrastructure and monitoring, surround one tiny box labelled ML code.">
+        <defs>
+          <filter id="s1bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="17" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s1bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s1bH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s1bL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s1bS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s1bB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s1bN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s1bH" x="30" y="26">WHAT A PRODUCTION ML SYSTEM IS MADE OF (SCULLEY ET AL. 2015, FIGURE 1, REDRAWN)</text>
+
+        <g filter="url(#s1bSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="48" width="250" height="60" rx="8" transform="rotate(-0.5 165 78)" fill="#FBEFF5"/>
+          <rect x="300" y="48" width="260" height="60" rx="8" transform="rotate(0.4 430 78)" fill="#FFFFFF"/>
+          <rect x="570" y="48" width="270" height="60" rx="8" transform="rotate(-0.3 705 78)" fill="#FBEFF5"/>
+          <rect x="40" y="118" width="290" height="60" rx="8" transform="rotate(0.3 185 148)" fill="#FFFFFF"/>
+          <rect x="386" y="140" width="28" height="20" rx="3" fill="#9A5B00" stroke="#9A5B00"/>
+          <rect x="470" y="118" width="370" height="60" rx="8" transform="rotate(-0.4 655 148)" fill="url(#s1bHc)"/>
+          <rect x="40" y="188" width="190" height="60" rx="8" transform="rotate(0.5 135 218)" fill="#FFFFFF"/>
+          <rect x="240" y="188" width="260" height="60" rx="8" transform="rotate(-0.4 370 218)" fill="#FBEFF5"/>
+          <rect x="510" y="188" width="190" height="60" rx="8" transform="rotate(0.3 605 218)" fill="#FFFFFF"/>
+          <rect x="710" y="188" width="130" height="60" rx="8" transform="rotate(-0.6 775 218)" fill="#FBEFF5"/>
+        </g>
+
+        <text class="s1bL" x="165" y="83" text-anchor="middle">Configuration</text>
+        <text class="s1bL" x="430" y="83" text-anchor="middle">Data Collection</text>
+        <text class="s1bL" x="705" y="83" text-anchor="middle">Feature Extraction</text>
+        <text class="s1bL" x="185" y="153" text-anchor="middle">Data Verification</text>
+        <text class="s1bB" x="400" y="132" text-anchor="middle">ML Code</text>
+        <text class="s1bL" x="655" y="153" text-anchor="middle">Machine Resource Management</text>
+        <text class="s1bL" x="135" y="223" text-anchor="middle">Analysis Tools</text>
+        <text class="s1bL" x="370" y="223" text-anchor="middle">Process Management Tools</text>
+        <text class="s1bL" x="605" y="223" text-anchor="middle">Serving Infrastructure</text>
+        <text class="s1bL" x="775" y="223" text-anchor="middle">Monitoring</text>
+
+        <text class="s1bN" x="30" y="278">Box sizes are drawn, not measured: the paper gives the figure no numbers. Its glue-code section says a mature system</text>
+        <text class="s1bN" x="30" y="296">"might end up being (at most) 5% machine learning code", an argument about glue code, not a survey result.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - every box but the ochre one is work the model's accuracy number never mentions</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Read the percent carefully, because everyone quotes it<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The figure is often retold as "ML code is 5 percent of an ML system". The figure itself carries no percent. The number appears later, in the section on glue code, hedged: a mature system "might end up being (at most) 5% machine learning code and (at least) 95% glue code", written as an argument for building native solutions rather than wrapping general-purpose packages. Ng's lectures offer "maybe only 5-10%" as a separate estimate. Quote either with its hedge and its author, or quote the caption, which is the claim the paper actually makes: a small fraction.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>The debts a leader should be able to name<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The paper's catalogue is long. Six of its debts show up in almost every production review, and each one is a decision, not a code smell.</p>
+        <table class="clean">
+          <tr><th>Debt</th><th>What it means</th><th>The decision it forces</th></tr>
+          <tr><td>Entanglement, CACE</td><td>"Changing Anything Changes Everything": no input's effect is independent of the others</td><td>Every change, even one feature, is re-validated as a new model</td></tr>
+          <tr><td>Undeclared consumers</td><td>Other systems silently use the model's output as their input</td><td>Who is allowed to read the output, and who is told when it changes</td></tr>
+          <tr><td>Unstable data dependencies</td><td>An input signal changes behaviour over time, often owned by another team</td><td>Version the signals you depend on; give each an owner</td></tr>
+          <tr><td>Feedback loops</td><td>The model influences the data it will later be trained on, directly or through the world</td><td>Session 5: what you hold out so the model cannot grade itself</td></tr>
+          <tr><td>Glue code, pipeline jungles</td><td>Most of the code moves data in and out; joins and scrapes pile up</td><td>Budget the plumbing as the product, not overhead</td></tr>
+          <tr><td>Changes in the external world</td><td>Fixed thresholds go stale; the world moves under the model</td><td>Sessions 4 and 5: retrain policy and monitoring you will act on</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>The rest of the catalogue<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Correction cascades (a model patched on top of another model, until improving the first breaks the second: the paper calls it an improvement deadlock). Underutilized data dependencies (legacy, bundled, epsilon and correlated features that add little and break often; the paper suggests leave-one-feature-out evaluations to find them). Dead experimental codepaths. Abstraction debt. Configuration debt ("the number of lines of configuration can far exceed the number of lines of the traditional code"). And four debts outside the code: data testing, reproducibility, process management and cultural debt.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The paper's own warning about dead code.</strong> Sculley and colleagues cite the Knight Capital incident, in which a firm lost $465 million in 45 minutes, apparently because obsolete experimental codepaths behaved unexpectedly. It is not an ML failure, and the paper does not claim it is. It is the reason the paper tells ML teams to delete the experiment branches they no longer run: in a system where most code is not the model, the code nobody remembers is the code that surprises you.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers Breck et al. 2017, the ML Test Score</span>
+      <h2>Readiness is scored by the weakest section</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">Two years after the debt paper, Eric Breck, D. Sculley and three colleagues turned the warning into a checklist: 28 tests in four sections of seven, for data, model, infrastructure and monitoring. The scoring rule is the part worth stealing. Each test earns half a point if it is run by hand and documented, a full point if it runs automatically. The final score is not the total. It is the <strong>minimum</strong> of the four section scores.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A constructed example of four ML Test Score section totals out of 7: data 3.5, model 2.0, infrastructure 4.0, monitoring 1.0. A dashed line at 1.0 marks the final score, the minimum, which falls in the band not totally untested, but serious holes in reliability are possible.">
+        <defs>
+          <filter id="s1cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="23" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s1cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s1cH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s1cL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s1cS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s1cB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s1cV { font: 800 12px Inter, sans-serif; fill: #6B2049; }
+          .s1cN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s1cH" x="30" y="26">FOUR SECTIONS, ONE SCORE: THE MINIMUM (CONSTRUCTED EXAMPLE)</text>
+        <text class="s1cS" x="30" y="44">each section: 7 tests x (0, 0.5 manual, 1 automated)</text>
+
+        <g filter="url(#s1cSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M260 50 L260 250" stroke="#6A4B5C" stroke-width="1.5"/>
+          <rect x="260" y="62" width="210" height="28" rx="4" fill="url(#s1cHc)"/>
+          <rect x="260" y="114" width="120" height="28" rx="4" fill="url(#s1cHc)"/>
+          <rect x="260" y="166" width="240" height="28" rx="4" fill="url(#s1cHc)"/>
+          <rect x="260" y="218" width="60" height="28" rx="4" fill="#9A5B00" stroke="#9A5B00"/>
+          <path d="M320 50 L320 256" stroke="#9A5B00" stroke-width="2.5" stroke-dasharray="6 5"/>
+          <path d="M680 50 L680 256" stroke="#E2CBD7" stroke-width="1.5"/>
+        </g>
+
+        <text class="s1cL" x="248" y="81" text-anchor="end">Features and data</text>
+        <text class="s1cL" x="248" y="133" text-anchor="end">Model development</text>
+        <text class="s1cL" x="248" y="185" text-anchor="end">ML infrastructure</text>
+        <text class="s1cB" x="248" y="237" text-anchor="end">Monitoring</text>
+        <text class="s1cV" x="480" y="81">3.5</text>
+        <text class="s1cV" x="390" y="133">2.0</text>
+        <text class="s1cV" x="510" y="185">4.0</text>
+        <text class="s1cB" x="330" y="237">1.0</text>
+        <text class="s1cS" x="684" y="44">7 = every test automated</text>
+        <text class="s1cB" x="326" y="270">final score 1.0: "Not totally untested, but it is worth considering</text>
+        <text class="s1cB" x="326" y="286">the possibility of serious holes in reliability."</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - strong infrastructure does not buy back missing monitoring; the minimum makes the weakest section the score</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Why the minimum is the leader's rule<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A total would let a team with superb infrastructure and no monitoring report a healthy number. The authors take the minimum because "all four sections are important, and so a system must consider all in order to raise the score". That is a governance rule, not a statistics choice: it tells a team that the next point of readiness can only come from its weakest area, which is exactly where the next unit of effort should go.</p>
+        <table class="clean">
+          <tr><th>Final score</th><th>What the paper says it means</th></tr>
+          <tr><td>0</td><td>More of a research project than a productionized system</td></tr>
+          <tr><td>(0, 1]</td><td>Not totally untested, but it is worth considering the possibility of serious holes in reliability</td></tr>
+          <tr><td>(1, 2]</td><td>There's been first pass at basic productionization, but additional investment may be needed</td></tr>
+          <tr><td>(2, 3]</td><td>Reasonably tested, but it's possible that more of those tests and procedures may be automated</td></tr>
+          <tr><td>(3, 5]</td><td>Strong levels of automated testing and monitoring, appropriate for mission-critical systems</td></tr>
+          <tr><td>above 5</td><td>Exceptional levels of automated testing and monitoring</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What the 36 Google teams showed<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The authors met 36 teams across Google. None of the 28 tests was implemented by more than 80 percent of them. The one they single out, "perhaps the most important and least implemented", is monitoring test 3: training and serving are not skewed, meaning the features the model sees live are computed the same way as the features it was trained on. Session 3 comes back to it, because a shadow deployment is the cheapest way to catch that skew before customers do.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>A one-page readiness sheet for a system you own</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Pick one ML system: one you run, one you are about to approve, or one you depend on. If you have none, use the Elec2 price-direction model from session 4. Five steps, each a block you copy into a document and fill in. There are no right answers to type; there are honest ones and optimistic ones, and the sheet is only useful if it is the first kind.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The readiness sheet as a flow: the decision and its fallback, then the nine boxes each tagged with an owner, one tagged no owner, then four section scores, then the minimum read against the paper's bands, then three debts to pay first.">
+        <defs>
+          <filter id="s1dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="29" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s1dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s1dH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s1dL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s1dS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s1dB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s1dR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s1dN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s1dH" x="30" y="26">ONE PAGE, FIVE BLOCKS, READ LEFT TO RIGHT</text>
+
+        <g filter="url(#s1dSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="56" width="140" height="150" rx="10" transform="rotate(-0.8 100 131)" fill="#FFFFFF"/>
+          <rect x="200" y="56" width="170" height="150" rx="10" transform="rotate(0.5 285 131)" fill="#FBEFF5"/>
+          <rect x="220" y="80" width="56" height="18" rx="3" fill="#FFFFFF"/>
+          <rect x="290" y="80" width="56" height="18" rx="3" fill="#FFFFFF"/>
+          <rect x="220" y="110" width="56" height="18" rx="3" fill="#FFFFFF"/>
+          <rect x="290" y="110" width="56" height="18" rx="3" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="220" y="140" width="56" height="18" rx="3" fill="#FFFFFF"/>
+          <rect x="290" y="140" width="56" height="18" rx="3" fill="#FFFFFF"/>
+          <rect x="400" y="56" width="150" height="150" rx="10" transform="rotate(-0.4 475 131)" fill="#FFFFFF"/>
+          <path d="M420 90 L500 90 M420 116 L470 116 M420 142 L510 142 M420 168 L440 168" stroke="#A23B72" stroke-width="6"/>
+          <rect x="580" y="56" width="120" height="150" rx="10" transform="rotate(0.6 640 131)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="730" y="56" width="120" height="150" rx="10" transform="rotate(-0.6 790 131)" fill="#FFFFFF"/>
+          <path d="M172 131 L194 131" marker-end="url(#s1dAr)"/>
+          <path d="M372 131 L394 131" marker-end="url(#s1dAr)"/>
+          <path d="M552 131 L574 131" marker-end="url(#s1dAr)"/>
+          <path d="M702 131 L724 131" marker-end="url(#s1dAr)"/>
+        </g>
+
+        <text class="s1dL" x="100" y="80" text-anchor="middle">1 · the decision</text>
+        <text class="s1dS" x="100" y="104" text-anchor="middle">what it decides</text>
+        <text class="s1dS" x="100" y="122" text-anchor="middle">for whom</text>
+        <text class="s1dS" x="100" y="140" text-anchor="middle">what happens</text>
+        <text class="s1dS" x="100" y="156" text-anchor="middle">if it is off</text>
+        <text class="s1dL" x="285" y="74" text-anchor="middle">2 · boxes, owners</text>
+        <text class="s1dR" x="285" y="182" text-anchor="middle">one box, no owner</text>
+        <text class="s1dL" x="475" y="74" text-anchor="middle">3 · four sections</text>
+        <text class="s1dS" x="475" y="190" text-anchor="middle">0, 0.5 or 1 per test</text>
+        <text class="s1dL" x="640" y="80" text-anchor="middle">4 · the minimum</text>
+        <text class="s1dB" x="640" y="130" text-anchor="middle">lowest section</text>
+        <text class="s1dS" x="640" y="148" text-anchor="middle">read the band</text>
+        <text class="s1dL" x="790" y="80" text-anchor="middle">5 · pay first</text>
+        <text class="s1dS" x="790" y="110" text-anchor="middle">three debts</text>
+        <text class="s1dS" x="790" y="128" text-anchor="middle">an owner each</text>
+        <text class="s1dS" x="790" y="146" text-anchor="middle">a date each</text>
+
+        <text class="s1dN" x="30" y="240">The red box is the finding most sheets produce first: a part of the system that runs every day and belongs to nobody.</text>
+        <text class="s1dN" x="30" y="258">The ochre block is the only number the sheet reports upward. The other four explain it.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the sheet reports one number, the minimum, and names who owns closing the gap under it</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Name the decision, not the model.</strong> One sentence each. The fallback line matters most: it is what the business does when the model is switched off, and if nobody can write it, the model has no safe "off".</p>
+        <div class="prompt-box good"><span class="label">★ Block 1 · the decision</span>System:            ____________________________
+It decides:         ____________________________  (e.g. "which invoices get a manual check")
+For whom:           ____________________________
+Cost of a wrong yes: __________   Cost of a wrong no: __________
+If it is switched off, we: _________________________  (the fallback, today)
+We find out if it was right after: ________  (the label delay, measured, not guessed)</div>
+      </div>
+      <div class="step">
+        <p><strong>Draw your nine boxes and put a name on each.</strong> Use Sculley's list as the checklist. A team name is not an owner; a person who gets paged is.</p>
+        <div class="prompt-box good"><span class="label">★ Block 2 · boxes and owners</span>Configuration ............... owner: ________
+Data collection ............. owner: ________
+Feature extraction .......... owner: ________
+Data verification ........... owner: ________
+Machine resource mgmt ....... owner: ________
+Analysis tools .............. owner: ________
+Process management .......... owner: ________
+Serving infrastructure ...... owner: ________
+Monitoring .................. owner: ________
+ML code ..................... owner: ________
+Undeclared consumers we know of: ________</div>
+      </div>
+      <div class="step">
+        <p><strong>Score the four sections.</strong> Seven tests each. Zero if it is not done, 0.5 if someone does it by hand and writes the result down, 1 if it runs automatically. Monitoring is below; the other three sections are in the paper, and session 3 and 5 come back to the ones leaders ask about.</p>
+        <div class="prompt-box good"><span class="label">★ Block 3 · the monitoring section, as an example</span>Monitor 1  Dependency changes result in notification .......... 0 / 0.5 / 1
+Monitor 2  Data invariants hold for inputs .................... 0 / 0.5 / 1
+Monitor 3  Training and serving are not skewed ................ 0 / 0.5 / 1
+Monitor 4  Models are not too stale ........................... 0 / 0.5 / 1
+Monitor 5  Models are numerically stable ...................... 0 / 0.5 / 1
+Monitor 6  Computing performance has not regressed ............ 0 / 0.5 / 1
+Monitor 7  Prediction quality has not regressed ............... 0 / 0.5 / 1
+Section total: ____ / 7
+Repeat for: features and data, model development, ML infrastructure.</div>
+      </div>
+      <div class="step">
+        <p><strong>Take the minimum and read the band.</strong> Write the lowest section score as the system's score. Resist the urge to average. Then copy the band sentence from Part 3 next to it, word for word.</p>
+        <div class="prompt-box good"><span class="label">★ Block 4 · the one number</span>Data ____   Model ____   Infra ____   Monitoring ____
+ML Test Score = min(...) = ____
+Band: "_______________________________________________"
+The section holding the score down: ____________</div>
+      </div>
+      <div class="step">
+        <p><strong>Pick three debts to pay first.</strong> From the lowest section, or from any box without an owner. Each gets a person and a date. That list, not the score, is what the sheet is for.</p>
+        <div class="prompt-box good"><span class="label">★ Block 5 · pay first</span>1. ______________________  owner: ________  by: ________
+2. ______________________  owner: ________  by: ________
+3. ______________________  owner: ________  by: ________
+Next review of this sheet: ________</div>
+      </div>
+    </div>
+
+    <div class="wyb">
+      <span class="wyb-pill">What you would build</span>
+      <p>Keep the sheet as data in the model's repository, not as a slide, so the score is recomputed on every review and the history shows whether it moved. A few lines are enough.</p>
+      <div class="prompt-box good"><span class="label">★ readiness.py</span>SCORES = {   # 0 not done, 0.5 manual and documented, 1 automated
+    "data":       [1, 0.5, 0.5, 0, 1, 0.5, 0],
+    "model":      [0.5, 0, 0.5, 0, 0.5, 0.5, 0],
+    "infra":      [1, 1, 0.5, 0.5, 0.5, 0, 0.5],
+    "monitoring": [0.5, 0.5, 0, 0, 0, 0, 0],
+}
+totals = {k: sum(v) for k, v in SCORES.items()}
+score = min(totals.values())
+weakest = min(totals, key=totals.get)
+print(totals, "score", score, "weakest", weakest)
+# {'data': 3.5, 'model': 2.0, 'infra': 4.0, 'monitoring': 1.0} score 1.0 weakest monitoring</div>
+      <p>Those scores are the constructed example from the Part 3 figure. The automation that turns a 0.5 into a 1, scheduled checks, alerts and pipeline tests, is built in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b6-model-deploy-monitor.html">DataOps session b6 ↗</a>.</p>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Date the sheet.</strong> <code>readiness_2026-09-29.md</code>, not <code>readiness.md</code>. Session 6 asks whether this system should still be running, and the answer is much easier when you can show the score it had when it launched and the score it has now.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 2</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Finish the sheet with the people who run the system,</strong> not alone. The first disagreement about a score is usually the most useful line on the page.</li>
+      <li><strong>Find one undeclared consumer.</strong> Ask the data platform team who reads the model's output table. If the list surprises the model's owner, write it into block 2.</li>
+      <li><strong>Write the fallback in one sentence</strong> and ask the business owner whether it is true. If the honest fallback is "we would not notice", that is a finding for session 5.</li>
+      <li><strong>Bring one project that has not launched yet.</strong> Session 2 scopes it before a line of model code exists, including the version of it that uses no machine learning at all.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 1 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="1">
+      <p class="qtext">1 · A board slide says "Google showed ML code is only 5% of an ML system." What is the accurate version?</p>
+      <button class="qopt" type="button">A · It is accurate as written; the figure in the paper is labelled 5 percent</button>
+      <button class="qopt" type="button">B · The figure's caption says only a small fraction of a real-world ML system is ML code and gives no percent; the 5 percent appears in the glue-code section as "might end up being (at most) 5%", an argument, not a measurement</button>
+      <button class="qopt" type="button">C · The paper measured 95 percent glue code across 36 Google teams</button>
+      <button class="qopt" type="button">D · The number comes from the ML Test Score paper</button>
+      <p class="qwhy">The figure has no numbers. The hedged 5 percent is in the text, and the 36 teams belong to a different paper, the ML Test Score, which measured test adoption, not code share.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">2 · A system scores 6 of 7 on infrastructure, 5 on data, 4 on model development and 0.5 on monitoring. What is its ML Test Score?</p>
+      <button class="qopt" type="button">A · 15.5, the total</button>
+      <button class="qopt" type="button">B · 3.9, the average</button>
+      <button class="qopt" type="button">C · 0.5, the minimum, which sits in the band "not totally untested, but it is worth considering the possibility of serious holes in reliability"</button>
+      <button class="qopt" type="button">D · 6, the best section</button>
+      <p class="qwhy">The final score is the minimum of the four section scores, so strength elsewhere cannot hide the weakest section. The next point of readiness can only come from monitoring.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">3 · Why does the lifecycle diagram put the first deployment in the middle of the timeline?</p>
+      <button class="qopt" type="button">A · Because after launch the data drifts, the model ages and has to be retrained, and live data sends work back to the data and modeling stages; operating the system is recurring work that the first plan rarely budgets</button>
+      <button class="qopt" type="button">B · Because most projects take exactly as long after launch as before</button>
+      <button class="qopt" type="button">C · Because deployment is the hardest stage technically</button>
+      <button class="qopt" type="button">D · Because scoping happens again at the halfway point by rule</button>
+      <p class="qwhy">The three arrows back are the point: deployment feeds data and modeling again. "The middle" is a claim about where the work continues, not a measured ratio of durations.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Ng, Machine Learning in Production, week 1: the ML project lifecycle</span><span class="note">Stage names and week titles read on the DeepLearning.AI and Coursera pages; lecture content, including the POC-to-production gap and "maybe only 5-10%", reported from compiled lecture notes. Videos and certificate stay official</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Sculley et al. 2015, Hidden Technical Debt in Machine Learning Systems</span><span class="note">Read at source: Figure 1 caption and box names, the hedged 5 percent in the glue-code section, the debt catalogue, the Knight Capital citation</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Breck et al. 2017, The ML Test Score</span><span class="note">Read at source: 28 tests in four sections, the half-point and full-point rule, the minimum, the six bands, the seven monitoring tests, the 36 teams and the 80 percent finding</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">The readiness sheet scores</span><span class="note">Constructed for the figure and the code example, and labelled so</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 1 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Four stages, three arrows back</b><span>Scoping, data, modeling, deployment. Deployment feeds data and modeling again.</span></div>
+      <div class="cheat-item"><b>The launch is the middle</b><span>Everything after it is recurring cost: operate, monitor, retrain, retire.</span></div>
+      <div class="cheat-item"><b>The small box</b><span>Nine boxes around ML code. The caption says "a small fraction" and gives no number.</span></div>
+      <div class="cheat-item"><b>Quote the hedge</b><span>"Might end up being (at most) 5%" is an argument about glue code, not a survey.</span></div>
+      <div class="cheat-item"><b>ML Test Score = the minimum</b><span>28 tests, 4 sections, 0.5 manual, 1 automated. The weakest section is the score.</span></div>
+      <div class="cheat-item"><b>Every box has a person</b><span>A box with no owner is the first debt to pay.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>The cheapest moment to stop a bad ML project is before it starts. Session 2 scopes a project the way Ng teaches it, with diligence on feasibility and on value, a baseline the model must beat, and Zinkevich's first rule of machine learning: do not be afraid to launch without it. Bring the project that has not launched yet.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 1 of 6 · learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="../index.html">← Course home</a> &nbsp;·&nbsp; <a href="02-scope-it-like-a-project.html">Next: Scope it like a project →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=2"></script>
+</body>
+</html>

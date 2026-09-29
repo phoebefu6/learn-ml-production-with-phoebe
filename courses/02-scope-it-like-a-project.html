@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 2 of 6. Scope an ML project before any model exists: diligence on feasibility and on value, the baseline every model must beat measured at the real label delay, and Zinkevich's rule to launch without ML first. A one-page scoping memo with a stop rule.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Scope it like a project - learn ml production with phoebe">
+<meta property="og:description" content="Session 2 of 6. Scoping is where no is still cheap. Feasibility, value, the no-model baseline at your real label delay, and a stop rule written before modeling starts.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/courses/02-scope-it-like-a-project.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Scope it like a project - learn ml production with phoebe">
+<meta name="twitter:description" content="Session 2 of 6. Feasibility, value, the baseline at the real label delay, and a stop rule with a date.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 2 · Scope it like a project - learn ml production with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-ml-production-with-phoebe</a> / Session 2 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ML in Production: The Leader Cut · Session 2 of 6</div>
+    <h1>Scope it like <span class="accent">a project</span></h1>
+    <p class="sub">The cheapest moment to stop a bad ML project is before anyone trains anything. After that, every week of work becomes an argument for continuing. Tonight is about the stage most teams rush: scoping. Write the problem without AI words, check whether the data and labels exist, agree the business number that would make it worth shipping, and measure the rule a model has to beat, at the label delay you really have. You leave with a one-page scoping memo, including the stop rule, for the project you brought.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Advanced</span>
+      <span class="chip audience">Leaders who fund ML projects</span>
+      <span class="chip audience">Builders asked "can we use AI for this?"</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Scoping, baselines, the first rule</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: the scoping memo</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Session 1 put the first deployment in the middle of the project. This session is about the left edge, the only stretch of the timeline where saying no costs a meeting instead of a quarter. Three questions decide it. Is there a real problem with an owner, data and labels behind it? What is the simplest rule that already solves part of it, and how well does that rule score? And what number, agreed in advance, would make a model worth its running cost? A project that cannot answer those three is not ready for a model, however good the demo.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = fill it in for your own system</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> A one-page scoping memo for the project you brought: the problem in one sentence with no AI words, the cost of a wrong yes and a wrong no, the no-model baseline measured at your real label delay, the business number the model has to move, and a stop rule with a date on it. Plus the habit that saves the most money in ML: measure the baselines before anyone trains anything.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers Ng's scoping process, week 3</span>
+      <h2>Scoping is where no is still cheap</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">The decision first: before a project gets a team, a leader should see it pass two checks, feasibility and value, and see the date at which it will be stopped if it does not deliver. Andrew Ng's Machine Learning in Production course puts scoping in week 3 as an optional set of five videos: "What is scoping?", "Scoping process", "Diligence on feasibility and value", "Diligence on value" and "Milestones and resourcing". The titles are read from the course page; the lecture content is reported, from compiled notes, since the official notes sit behind the course login. The titles alone make the point: value gets its own video.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The scoping process as a decision flow of five steps from top to bottom: the business problem written without AI words, brainstorm solutions, diligence on feasibility, diligence on value, milestones and resourcing. Feasibility and value each have an arrow to the right into a stop here exit: no data or labels, and no business number worth shipping. The value diligence box is highlighted as the step leaders skip.">
+        <defs>
+          <filter id="s2aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="31" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2aH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s2aL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s2aS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s2aB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s2aR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s2aN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s2aH" x="30" y="26">SCOPING: FIVE STEPS, TWO EXITS WHERE NO IS STILL CHEAP</text>
+
+        <g filter="url(#s2aSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- steps -->
+          <rect x="60" y="44" width="330" height="40" rx="8" transform="rotate(-0.6 225 64)" fill="#FFFFFF"/>
+          <rect x="60" y="104" width="330" height="40" rx="8" transform="rotate(0.5 225 124)" fill="#FBEFF5"/>
+          <rect x="60" y="164" width="330" height="40" rx="8" transform="rotate(-0.4 225 184)" fill="#FFFFFF"/>
+          <rect x="60" y="224" width="330" height="40" rx="8" transform="rotate(0.6 225 244)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="60" y="284" width="330" height="40" rx="8" transform="rotate(-0.5 225 304)" fill="#FBEFF5"/>
+          <!-- forward -->
+          <path d="M225 86 L225 100" marker-end="url(#s2aAr)"/>
+          <path d="M225 146 L225 160" marker-end="url(#s2aAr)"/>
+          <path d="M225 206 L225 220" marker-end="url(#s2aAr)"/>
+          <path d="M225 266 L225 280" marker-end="url(#s2aAr)"/>
+          <!-- stop exits -->
+          <path d="M394 184 L516 184" marker-end="url(#s2aAr)"/>
+          <path d="M394 244 L516 244" stroke="#9A5B00" marker-end="url(#s2aAr)"/>
+          <rect x="522" y="168" width="200" height="32" rx="6" transform="rotate(0.8 622 184)" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="522" y="228" width="200" height="32" rx="6" transform="rotate(-0.8 622 244)" fill="#FEF2F2" stroke="#991B1B"/>
+          <!-- doodle: a small hand-drawn stop sign -->
+          <path d="M760 214 L776 206 L792 214 L796 230 L788 244 L768 246 L756 234 Z" stroke="#991B1B"/>
+          <path d="M776 246 L776 270" stroke="#6A4B5C"/>
+        </g>
+
+        <text class="s2aL" x="225" y="69" text-anchor="middle">1 · the business problem, no AI words</text>
+        <text class="s2aL" x="225" y="129" text-anchor="middle">2 · brainstorm solutions, ML among them</text>
+        <text class="s2aL" x="225" y="189" text-anchor="middle">3 · diligence on feasibility</text>
+        <text class="s2aB" x="225" y="249" text-anchor="middle">4 · diligence on value</text>
+        <text class="s2aL" x="225" y="309" text-anchor="middle">5 · milestones and resourcing</text>
+
+        <text class="s2aS" x="404" y="64">who owns it, in business words</text>
+        <text class="s2aS" x="404" y="124">many options before one</text>
+        <text class="s2aS" x="404" y="176">data, labels, delay</text>
+        <text class="s2aB" x="404" y="236">the step leaders skip</text>
+        <text class="s2aS" x="404" y="304">a stop date, written now</text>
+
+        <text class="s2aR" x="622" y="188" text-anchor="middle">stop: no data, no labels</text>
+        <text class="s2aR" x="622" y="248" text-anchor="middle">stop: no number worth it</text>
+
+        <text class="s2aN" x="30" y="348">Steps follow Ng's week 3 scoping video titles. Each red exit costs a meeting now, or a quarter later.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - value diligence is the check that stops the most projects, and the one most often skipped</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Brainstorm problems before solutions<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Write the problem the way the business owner would say it, and ban the words AI, ML, model and predict from that sentence. "Reduce the money we lose when we buy electricity forward at the wrong price" is a problem. "Use ML to forecast prices" is a solution looking for one. The ban is practical: once the sentence names a technique, every alternative that does not use it has been ruled out before anyone compared them.</p>
+        <p>Then list solutions, plural. A rule, a process change, a better report, a human review queue, a model. The model is one row in that list, and step 3 and step 4 are how it earns its place.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Feasibility: is there anything to learn from?<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Four questions, each with a written answer rather than a nod:</p>
+        <table class="clean">
+          <tr><th>Question</th><th>Why it can stop the project</th></tr>
+          <tr><td>Is there data?</td><td>The inputs the model would use must exist at prediction time, not only in a warehouse a week later</td></tr>
+          <tr><td>Are there labels?</td><td>Someone or something has to record what actually happened, consistently, for enough cases</td></tr>
+          <tr><td>What is the label delay?</td><td>How long after a prediction you learn whether it was right. It sets the baseline and the retrain policy; <a href="04-the-retrain-policy-bench.html">session 4</a> measures how much it matters</td></tr>
+          <tr><td>Is there a baseline, or human-level performance?</td><td>If nobody can say how well the job is done today, nobody can say whether the model improved it</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Value: bridge the technical metric to a business number<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Technical teams measure accuracy, precision, error. The business measures money, time, risk, customers. Value diligence is writing the bridge between them, "every accuracy point above the baseline is worth this much, because...", and then naming the number that would make the project worth shipping and running. That number is agreed with the business owner before modeling starts, not negotiated after the results are in.</p>
+        <p><strong>The decision you sign:</strong> the project gets a team only when the value number has a signature next to it. If nobody on the business side will put their name to a number, that is the finding.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Milestones and resourcing, with a stop date<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Milestones turn a scoped project into dated checkpoints: data access confirmed, baseline measured, first model compared against it, a decision to deploy or not. Resourcing names the people and the running cost, which session 1 argued is mostly after launch.</p>
+        <p>The milestone that matters most is the one teams least like writing: the date at which the project stops if it has not beaten the baseline by an agreed margin. Written at scoping, it is a plan. Written after three months of work, it is a fight, and the sunk cost usually wins it.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>A 2 percent gain found by fixing data, not by modeling.</strong> In Zinkevich's Rules of Machine Learning, Rule 10, "Watch for silent failures", describes a table behind Google Play that went stale for 6 months. Nothing crashed. Refreshing the table alone gave "a boost of 2% in install rate". No new model, no new feature, no research. It is the reason feasibility asks about the data before the model: the value was sitting in a pipeline nobody was watching.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers baselines, and why the label delay sets them</span>
+      <h2>Every model has a rule to beat</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">The decision first: no model result reaches a leader without the baseline printed next to it, measured on the same rows at the same label delay. A baseline is the score you get without the model. It is the only honest reference point, and on real data it is often uncomfortably high. Here is the session 4 bench, a replay of a real electricity market, with the no-model rule at two label delays.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Accuracy on the session 4 Elec2 bench, axis starting at 50 percent. Always DOWN 57.72. No model, repeating the last known label at a 1-day delay, 65.35. Never-retrained model 68.70. Weekly-refit model 73.55. No model with labels 1.5 hours late 74.63, the highest bar, above both models.">
+        <defs>
+          <filter id="s2bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="37" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2bH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s2bL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s2bS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s2bB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s2bV { font: 800 13px Inter, sans-serif; fill: #6B2049; }
+          .s2bA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s2bN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s2bH" x="30" y="26">ACCURACY ON THE SAME ROWS: TWO MODELS AND THREE RULES</text>
+        <text class="s2bA" x="300" y="44">axis starts at 50 percent, not 0</text>
+
+        <g filter="url(#s2bSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M300 52 L300 252" stroke="#6A4B5C" stroke-width="1.5"/>
+          <path d="M300 252 L720 252" stroke="#6A4B5C" stroke-width="1.5"/>
+          <path d="M440 56 L440 252 M580 56 L580 252 M720 56 L720 252" stroke="#E2CBD7" stroke-width="1.2"/>
+          <rect x="300" y="60" width="108" height="26" rx="4" fill="#FFFFFF"/>
+          <rect x="300" y="98" width="215" height="26" rx="4" fill="#FBEFF5"/>
+          <rect x="300" y="136" width="262" height="26" rx="4" fill="url(#s2bHc)"/>
+          <rect x="300" y="174" width="330" height="26" rx="4" fill="url(#s2bHc)"/>
+          <rect x="300" y="212" width="345" height="26" rx="4" fill="#9A5B00" stroke="#9A5B00"/>
+          <!-- doodle: pointer from the ochre bar to the weekly bar -->
+          <path d="M700 222 C740 214 744 196 700 190" marker-end="url(#s2bAr)"/>
+        </g>
+
+        <text class="s2bL" x="288" y="78" text-anchor="end">always DOWN</text>
+        <text class="s2bL" x="288" y="116" text-anchor="end">no model, 1-day label delay</text>
+        <text class="s2bL" x="288" y="154" text-anchor="end">never-retrained model</text>
+        <text class="s2bL" x="288" y="192" text-anchor="end">weekly-refit model</text>
+        <text class="s2bB" x="288" y="230" text-anchor="end">no model, labels 1.5 hours late</text>
+
+        <text class="s2bV" x="416" y="78">57.72</text>
+        <text class="s2bV" x="523" y="116">65.35</text>
+        <text class="s2bV" x="570" y="154">68.70</text>
+        <text class="s2bV" x="638" y="192">73.55</text>
+        <text class="s2bB" x="653" y="230">74.63</text>
+        <text class="s2bS" x="756" y="210">beats both</text>
+
+        <text class="s2bS" x="300" y="268" text-anchor="middle">50</text>
+        <text class="s2bS" x="440" y="268" text-anchor="middle">60</text>
+        <text class="s2bS" x="580" y="268" text-anchor="middle">70</text>
+        <text class="s2bS" x="720" y="268" text-anchor="middle">80</text>
+
+        <text class="s2bN" x="30" y="300">Session 4 bench: Elec2, one row per 1.5 hours, 14,656 scored rows. "No model" repeats the last known label.</text>
+        <text class="s2bN" x="30" y="318">Both models run at the default 1-day label delay. Percent correct, measured in this build.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - with labels 1.5 hours late, copying the last label beats a model refit every week</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Four kinds of baseline, and which to demand<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <table class="clean">
+          <tr><th>Baseline</th><th>What it is</th><th>On the bench</th></tr>
+          <tr><td>Majority class</td><td>Always predict the most common outcome</td><td>Always DOWN, 57.72</td></tr>
+          <tr><td>A rule a clerk could run</td><td>A heuristic with no training: repeat the last known answer, a threshold, a lookup</td><td>Repeat the last known label, 65.35 at a 1-day delay</td></tr>
+          <tr><td>Human-level performance</td><td>How well the person doing the job today does it, measured on the same cases</td><td>Not measured on Elec2; for your project, go and measure it</td></tr>
+          <tr><td>The system in place today</td><td>Whatever the business actually runs now, however unglamorous</td><td>The number the model has to beat to change anything</td></tr>
+        </table>
+        <p>Demand at least the first two on every project, plus human-level whenever a human does the job today. The model's result means nothing until it sits in that table.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>The Elec2 lesson: the baseline depends on the label delay<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Elec2 is one of the most used datasets for testing models that adapt to a changing world: 45,312 half-hours of the New South Wales electricity market, labelled UP or DOWN. In 2013 Indrė Žliobaitė checked it against the simplest possible rule, "repeat the current label", which she calls a moving average of one. It scores 85.3 percent on the full file, against 51 percent if the labels were independent. The file had been used in over 40 concept drift experiments, and she recommended that every result on it be compared against that rule.</p>
+        <p>The bench's thinned rows, one every 1.5 hours, tell the same story with a twist. The same rule scores 74.63 when the label arrives 1.5 hours later, and 65.35 when it arrives a day later. Same data, same rule, nine points apart. The baseline is not a property of the data; it is a property of the data and how fast you learn the truth.</p>
+        <p><strong>The decision you sign:</strong> a baseline measured at a label delay the business does not have is not a baseline. Ask which delay it was measured at.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>"A simpler model is not better" is a test, not a hope<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Breck and colleagues' ML Test Score, from session 1, lists it as model development test 5: "A simpler model is not better". It is written as something a team runs and records before launch, not a belief it holds. Train the simple thing, score it on the same rows, and keep the evidence. Paired with a baseline table, it turns "the model is good" into "the model beats these specific alternatives by this much", which is the only sentence a launch review should accept.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>A hundred and thirty retrains, beaten by a copy.</strong> On the session 4 bench, the weekly-refit model retrains 130 times over two and a half years and scores 73.55 at a 1-day label delay. If the same market's labels arrived within 1.5 hours, repeating the last label would score 74.63 with no model at all. A team that measured only at its own convenient delay could ship the model and never learn that a data feed was worth more than the training pipeline.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers Zinkevich Rules 1, 2, 3, 4 and 16</span>
+      <h2>Launch without ML, then earn it</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">The decision first: the default launch is the simplest thing that works, with the metrics wired in, and machine learning is an upgrade the project earns with data. Martin Zinkevich's Rules of Machine Learning, 43 rules from Google engineering practice, open with exactly this order. Read as a stack, each rule is a layer that only makes sense on top of the one below it.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three stacked layers built upward over time. Base, highlighted: a heuristic and the metrics, Rules 1 and 2. Middle: a simple model with the infrastructure right, Rule 4. Top: launch and iterate, Rule 16, with a loop arrow. A chip to the right, Rule 3, choose ML over a complex heuristic, points at the step from the base to the middle layer as the upgrade trigger.">
+        <defs>
+          <filter id="s2cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="41" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2cH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s2cL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s2cS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s2cB { font: 800 12px Inter, sans-serif; fill: #6E4000; }
+          .s2cA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s2cN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s2cH" x="30" y="26">THE LAUNCH STACK: EACH LAYER EARNS THE ONE ABOVE IT</text>
+
+        <g filter="url(#s2cSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- time axis -->
+          <path d="M70 244 L70 60" stroke="#6A4B5C" stroke-width="1.5" marker-end="url(#s2cAr)"/>
+          <!-- layers -->
+          <rect x="200" y="56" width="320" height="48" rx="8" transform="rotate(-0.6 360 80)" fill="#FFFFFF"/>
+          <rect x="150" y="116" width="420" height="48" rx="8" transform="rotate(0.4 360 140)" fill="#FBEFF5"/>
+          <rect x="100" y="176" width="520" height="56" rx="8" transform="rotate(-0.3 360 204)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <path d="M90 244 L630 244" stroke="#6A4B5C" stroke-width="1.5"/>
+          <!-- doodle: iterate loop on the top layer -->
+          <path d="M540 70 C566 56 584 80 566 96 C552 106 538 98 536 88" marker-end="url(#s2cAr)"/>
+          <!-- trigger chip -->
+          <rect x="626" y="120" width="238" height="44" rx="8" transform="rotate(1 745 142)" fill="#FFFFFF"/>
+          <path d="M626 158 C606 170 598 170 592 170" marker-end="url(#s2cAr)"/>
+        </g>
+
+        <text class="s2cA" x="56" y="152" text-anchor="middle" transform="rotate(-90 56 152)">earned over time</text>
+
+        <text class="s2cL" x="360" y="78" text-anchor="middle">launch and iterate</text>
+        <text class="s2cS" x="360" y="94" text-anchor="middle">Rule 16</text>
+        <text class="s2cL" x="360" y="138" text-anchor="middle">a simple model, infrastructure right</text>
+        <text class="s2cS" x="360" y="154" text-anchor="middle">Rule 4</text>
+        <text class="s2cB" x="360" y="202" text-anchor="middle">a heuristic and the metrics</text>
+        <text class="s2cS" x="360" y="220" text-anchor="middle">Rules 1 and 2 · launch without ML</text>
+
+        <text class="s2cL" x="745" y="138" text-anchor="middle">upgrade trigger · Rule 3</text>
+        <text class="s2cS" x="745" y="155" text-anchor="middle">choose ML over a complex heuristic</text>
+
+        <text class="s2cN" x="30" y="276">From Zinkevich, Rules of Machine Learning. The base ships first; the model comes when the rule gets complex.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the first launch is the base layer; machine learning is the upgrade, triggered when the heuristic gets too complex to maintain</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Rule 1: "Don't be afraid to launch a product without machine learning."<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The rule's own summary is blunt: "If machine learning is not absolutely required for your product, don't use it until you have data." The reason is the data, not modesty. A heuristic in production collects the inputs and the outcomes a model will later need, and it tells you what the baseline really is.</p>
+        <p>The same rule carries the line that gets quoted most: "If you think that machine learning will give you a 100% boost, then a heuristic will get you 50% of the way there." Say plainly what it is: an illustrative rule of thumb from an experienced engineer, not a measurement. No study sits behind the 50 percent. Use it to set expectations, never as a forecast in a business case.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Rules 2 and 3: metrics first, and the trigger for ML<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Rule 2 is "First, design and implement metrics." Before the first model, the system should already be recording the numbers the model will be judged on, so the heuristic's score is known and the model's gain can be read against it rather than guessed.</p>
+        <p>Rule 3, "Choose machine learning over a complex heuristic", names the moment to upgrade: "A simple heuristic can get your product out the door. A complex heuristic is unmaintainable." When the rule list grows into special cases nobody can reason about, a model is the cheaper thing to maintain.</p>
+        <p><strong>The decision you sign:</strong> the first launch uses the simplest rule that works, with the metrics live. The model is funded when the heuristic has become complex, or the data says it is leaving value behind.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Rules 4 and 16: keep it simple, then keep shipping<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Rule 4, "Keep the first model simple and get the infrastructure right", explains why: "The first model provides the biggest boost to your product, so it doesn't need to be fancy." Most of the early risk is in the pipeline, not the algorithm, which is session 1's small box again.</p>
+        <p>Rule 16, "Plan to launch and iterate", sets the cadence expectation: "Many teams have launched a model per quarter or more for years." A scoping memo that plans one launch and no second one has planned the easy half.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>When the model does earn it.</strong> Rule 1 is not a verdict against ML. On the session 4 bench at a 1-day label delay, the weekly-refit model scores 73.55 against 65.35 for repeating the last known label: 8.20 points the rule cannot reach. That is what earning it looks like, a measured gap over the no-model rule at the delay the business really has, not a demo.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>The one-page scoping memo</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Take the project you brought, the one that has not launched yet. If you have none, use the worked example after the steps. Six blocks, each copied into a document and filled in. The memo fits on one page on purpose: if a block needs a second page, the project is not scoped yet. Block 6, the stop rule, is the one to write before you leave the room.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The scoping memo drawn as one page with six blocks in three rows of two: the problem, the decision, the baselines, feasibility, value, and the stop rule. The stop rule block is highlighted and annotated: if by a date the model does not beat the baseline by a margin, we stop. The value block is annotated as signed by the business owner.">
+        <defs>
+          <filter id="s2dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="43" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2dHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2dH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s2dL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s2dS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s2dB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s2dN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s2dH" x="30" y="26">ONE PAGE, SIX BLOCKS, ONE RULE THAT CAN END IT</text>
+
+        <g filter="url(#s2dSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- the page -->
+          <rect x="230" y="40" width="420" height="216" rx="6" transform="rotate(-0.4 440 148)" fill="#FFFFFF"/>
+          <!-- doodle: paperclip -->
+          <path d="M612 30 L612 66 C612 76 628 76 628 66 L628 36 C628 28 618 28 618 36 L618 62" stroke="#6A4B5C"/>
+          <!-- blocks -->
+          <rect x="250" y="70" width="180" height="50" rx="6" transform="rotate(0.8 340 95)" fill="#FBEFF5"/>
+          <rect x="450" y="70" width="180" height="50" rx="6" transform="rotate(-0.8 540 95)" fill="#FFFFFF"/>
+          <rect x="250" y="130" width="180" height="50" rx="6" transform="rotate(-0.6 340 155)" fill="url(#s2dHc)"/>
+          <rect x="450" y="130" width="180" height="50" rx="6" transform="rotate(0.6 540 155)" fill="#FBEFF5"/>
+          <rect x="250" y="190" width="180" height="50" rx="6" transform="rotate(0.7 340 215)" fill="#FFFFFF"/>
+          <rect x="450" y="190" width="180" height="50" rx="6" transform="rotate(-0.7 540 215)" fill="#FDF1DE" stroke="#9A5B00" stroke-width="2.6"/>
+          <!-- annotations -->
+          <path d="M216 214 L244 214" marker-end="url(#s2dAr)"/>
+          <path d="M664 214 L636 214" stroke="#9A5B00" marker-end="url(#s2dAr)"/>
+        </g>
+
+        <text class="s2dL" x="340" y="92" text-anchor="middle">1 · the problem</text>
+        <text class="s2dS" x="340" y="108" text-anchor="middle">no AI words, an owner</text>
+        <text class="s2dL" x="540" y="92" text-anchor="middle">2 · the decision</text>
+        <text class="s2dS" x="540" y="108" text-anchor="middle">wrong yes, wrong no</text>
+        <text class="s2dL" x="340" y="152" text-anchor="middle">3 · the baselines</text>
+        <text class="s2dS" x="340" y="168" text-anchor="middle">at the real label delay</text>
+        <text class="s2dL" x="540" y="152" text-anchor="middle">4 · feasibility</text>
+        <text class="s2dS" x="540" y="168" text-anchor="middle">data, labels, delay</text>
+        <text class="s2dL" x="340" y="212" text-anchor="middle">5 · value</text>
+        <text class="s2dS" x="340" y="228" text-anchor="middle">a signed business number</text>
+        <text class="s2dB" x="540" y="212" text-anchor="middle">6 · the stop rule</text>
+        <text class="s2dS" x="540" y="228" text-anchor="middle">date, baseline, margin</text>
+
+        <text class="s2dS" x="30" y="206">signed by the business owner</text>
+        <text class="s2dS" x="30" y="222">before modeling starts</text>
+        <text class="s2dB" x="672" y="198">if by &lt;date&gt; the model</text>
+        <text class="s2dB" x="672" y="214">does not beat &lt;baseline&gt;</text>
+        <text class="s2dB" x="672" y="230">by &lt;x&gt;, we stop</text>
+
+        <text class="s2dN" x="30" y="278">Blocks 3 and 5 hold the two numbers; block 6 gives them a date. Hatched: the block that is measured.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the stop rule is written on the same page as the value number, before any model exists</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Write the business problem in one sentence, with no AI words.</strong> No "AI", "ML", "model" or "predict". Then name the person who owns the problem, the one whose number moves if it is solved.</p>
+        <div class="prompt-box good"><span class="label">★ Block 1 · the problem</span>The problem:   ______________________________________________
+               (no AI, ML, model or predict in this sentence)
+Owned by:      ________________  (a person, not a team)
+Today we handle it by: _________________________________</div>
+      </div>
+      <div class="step">
+        <p><strong>Name the decision the model would make, and what each kind of mistake costs.</strong> A wrong yes and a wrong no rarely cost the same. If nobody can price either, the value block in step 5 will not survive contact with the business.</p>
+        <div class="prompt-box good"><span class="label">★ Block 2 · the decision</span>The model would decide: ____________________________
+Each time, it says yes or no to: ___________________
+Cost of a wrong yes:  __________  (who pays it: ________)
+Cost of a wrong no:   __________  (who pays it: ________)
+If the model is off, we fall back to: ______________</div>
+      </div>
+      <div class="step">
+        <p><strong>Measure the baselines.</strong> The no-model rule first, measured at the label delay you really have, not the one that flatters it. Add human-level performance if a person does the job today.</p>
+        <div class="prompt-box good"><span class="label">★ Block 3 · the baselines</span>Majority class:                          ______ %
+No-model rule (describe it): ______________________
+  measured at our real label delay of ______:  ______ %
+Human-level (if a human does it today):   ______ %
+  measured on ____ cases by ________
+The system in place today:                ______ %</div>
+      </div>
+      <div class="step">
+        <p><strong>Check feasibility.</strong> Give the label delay as a median and a 90th percentile: the slow tail is what decides the retrain policy in session 4.</p>
+        <div class="prompt-box good"><span class="label">★ Block 4 · feasibility</span>Inputs available at prediction time?  yes / no / partly: ________
+Labels recorded by: ______________   for ____ cases so far
+Label delay:  median ______   90th percentile ______
+Baseline number from block 3: ______ %
+Verdict: go on / stop here, because ______________________</div>
+      </div>
+      <div class="step">
+        <p><strong>Bridge the technical metric to the business metric.</strong> Write the chain in words, then the number that would make the project worth shipping and running. Get the owner from block 1 to sign it.</p>
+        <div class="prompt-box good"><span class="label">★ Block 5 · value</span>Technical metric: ____________  (e.g. accuracy on held-out weeks)
+One point of it is worth: ________ per ________, because ________
+Business metric it moves: ______________________
+Worth shipping if it moves by at least: ________
+Running cost per year (people, compute, labels): ________
+Signed: ________________  date: ________</div>
+      </div>
+      <div class="step">
+        <p><strong>Set milestones, resourcing and the stop rule.</strong> Dates and names for each milestone, then the sentence that ends the project if it does not deliver. Written now, stopping is a plan; written later, it is a fight.</p>
+        <div class="prompt-box good"><span class="label">★ Block 6 · milestones, resourcing, stop rule</span>Data access confirmed ........ by ________  owner ________
+Baselines measured ........... by ________  owner ________
+First model vs baselines ..... by ________  owner ________
+Deploy decision .............. by ________  owner ________
+People and budget: _______________________________
+
+STOP RULE: if by &lt;date&gt; the model does not beat &lt;baseline&gt;
+by &lt;x&gt; points at our real label delay, we stop.
+Agreed by: ________________  on ________</div>
+      </div>
+    </div>
+
+    <div class="callout example">
+      <span class="ex-pill">Worked example · constructed</span>
+      <p><strong>Northline Grid, a constructed electricity retailer. Constructed company, real bench numbers.</strong> Northline buys electricity forward and wants to know whether the New South Wales price will go UP or DOWN against its 24-hour average, to decide when to hedge. Block 1: "we lose money when we buy forward just before the price falls", owned by the head of trading. Block 3: the no-model rule, repeat the last known direction, scores 65.35 on the bench at a 1-day label delay, which is when Northline's settlement data arrives; if its data feed delivered labels within 1.5 hours, the same rule would score 74.63, above both bench models. Block 5 would carry Northline's own value number. Block 6, with a constructed margin: "if by the end of the quarter the model does not beat 65.35 by 3 points at a 1-day delay, we stop, and we price a faster data feed instead." The margin and dates are constructed; your numbers will differ.</p>
+    </div>
+
+    <div class="wyb">
+      <span class="wyb-pill">What you would build</span>
+      <p>Measure the baselines before anyone trains anything. On Elec2 it takes five lines, and the outputs below are real, measured on the full file.</p>
+      <div class="prompt-box good"><span class="label">★ baselines.py</span>from sklearn.datasets import fetch_openml
+df = fetch_openml(data_id=151, as_frame=True).frame   # Elec2, 45,312 half-hours
+y = (df["class"] == "UP").astype(int)
+print(len(df), round(1 - y.mean(), 4))                 # 45312 0.5755   always DOWN
+print(round((y == y.shift(1)).iloc[1:].mean(), 4))     # 0.8533   repeat the last half-hour
+print(round((y == y.shift(48)).iloc[48:].mean(), 4))   # 0.6562   repeat the same half-hour yesterday</div>
+      <p>The second line is the rule if labels arrive at once: copy the last half-hour, 85.33 percent, Žliobaitė's moving average of one. The third is the best you can do by copying if labels arrive a day late: copy the same half-hour yesterday, 65.62 percent. The model's target is whichever line matches your label delay. For your own data, shift by your real delay in rows. Once a model exists and beats the right line, the next step is looking at what it gets wrong, which is error analysis, taught in <a href="https://phoebefu6.github.io/learn-ml-strategy-with-phoebe/courses/a3-look-at-100-mistakes.html">ML Strategy session a3 ↗</a>.</p>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Put the stop rule in the calendar.</strong> A stop rule in a memo gets forgotten; a stop rule with a meeting invite on its date gets read. Session 6 comes back to it, because the kill decision is much easier when it was agreed before anyone had a stake in the answer.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 3</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Write the memo for the project you brought,</strong> all six blocks, on one page. If a block will not fit, that block is the one to scope further.</li>
+      <li><strong>Measure the no-model rule on your own data at your real label delay.</strong> Shift by the delay you actually have, not by one row. Write both numbers down if the team has been quoting the fast one.</li>
+      <li><strong>Get the business owner to sign the value number.</strong> In person, on the memo. A number nobody will sign is a finding, not a formality.</li>
+      <li><strong>Write the stop rule and put a date on it,</strong> then put that date in the calendar of everyone who signed.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 2 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · A business case says "Google found a heuristic delivers 50% of ML's benefit, so our rule-based version will capture half the value." What is wrong with it?</p>
+      <button class="qopt" type="button">A · Nothing; Zinkevich measured it across Google products</button>
+      <button class="qopt" type="button">B · The number is 80 percent, from the ML Test Score paper</button>
+      <button class="qopt" type="button">C · Rule 1's "a heuristic will get you 50% of the way there" is an illustrative rule of thumb, not a measurement, and cannot be used as a forecast</button>
+      <button class="qopt" type="button">D · The rule says heuristics give no benefit until there is data</button>
+      <p class="qwhy">The line illustrates why launching without ML is reasonable. No study sits behind the 50 percent; the business case needs its own baseline measured on its own data.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">2 · On the session 4 bench, repeating the last known label scores 74.63 with labels 1.5 hours late and 65.35 with labels a day late. What does that tell a team scoping a model?</p>
+      <button class="qopt" type="button">A · The rule is unreliable and should be ignored as a baseline</button>
+      <button class="qopt" type="button">B · Use the higher number, since it is the rule's best case</button>
+      <button class="qopt" type="button">C · The data changed between the two runs</button>
+      <button class="qopt" type="button">D · The label delay decides the baseline: the same rule on the same rows scores differently depending on how soon the truth arrives, so it must be measured at the delay the business really has</button>
+      <p class="qwhy">Same data, same rule, nine points apart. A baseline measured at a faster delay than you have makes the model look worse than it is; one measured slower makes it look better.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="1">
+      <p class="qtext">3 · Where does the stop rule "if by this date the model does not beat the baseline by this margin, we stop" belong?</p>
+      <button class="qopt" type="button">A · In the launch review, once the model's results are known</button>
+      <button class="qopt" type="button">B · In the scoping memo, before modeling starts, when stopping is still cheap and nobody has a stake in the answer</button>
+      <button class="qopt" type="button">C · In the monitoring dashboard after deployment</button>
+      <button class="qopt" type="button">D · Nowhere; a good team knows when to stop</button>
+      <p class="qwhy">Written at scoping, the stop rule is a plan. Written after months of work, the sunk cost argues against it every time.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Ng, Machine Learning in Production, week 3 scoping videos</span><span class="note">The five video titles read on the course page; lecture content reported from compiled notes. Videos and certificate stay official</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Zinkevich, Rules of Machine Learning: Rules 1, 2, 3, 4, 10 and 16</span><span class="note">Read at source: titles and quoted lines, including the 50 percent rule of thumb and the 2 percent install-rate boost from a stale table</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Žliobaitė 2013, How good is the Electricity benchmark for evaluating concept drift adaptation</span><span class="note">Read at source: the moving average of one at 85.3 percent, the 51 percent independence figure, over 40 experiments, the recommendation</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Breck et al. 2017, The ML Test Score, model test 5</span><span class="note">Read at source: "A simpler model is not better"</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Elec2 baselines and the session 4 bench</span><span class="note">Measured in this build: full-file baselines from OpenML 151, bench rows at 1.5 hours and 1 day</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Northline Grid</span><span class="note">Constructed company for the worked example; its baselines are real bench numbers, its margin and dates constructed</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 2 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>No AI words in the problem</b><span>Name the business problem and its owner. A technique in the sentence rules out every alternative.</span></div>
+      <div class="cheat-item"><b>Feasibility = data, labels, delay, baseline</b><span>Four written answers. Any one missing is a cheap reason to stop now.</span></div>
+      <div class="cheat-item"><b>Value = a signed business number</b><span>Bridge the technical metric to money or risk, and get it signed before modeling.</span></div>
+      <div class="cheat-item"><b>Baseline at the real label delay</b><span>Same rule, same rows: 74.63 at 1.5 hours, 65.35 at a day. Measure at the delay you have.</span></div>
+      <div class="cheat-item"><b>Launch without ML if you can</b><span>Rule 1. The 50 percent line is a rule of thumb, not a measurement.</span></div>
+      <div class="cheat-item"><b>Stop rule with a date</b><span>If by the date the model does not beat the baseline by the margin, stop. Written at scoping.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>A scoped model still has to meet real traffic. Session 3 decides how: the degrees of automation from human only to full automation, shadow mode, canary and blue-green rollouts, and the rollback written before the rollout. Bring the decision from block 2; its cost of a wrong yes decides how carefully it should go live.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 2 of 6 · learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="01-the-first-deployment-is-the-middle.html">← Prev: The first deployment is the middle</a> &nbsp;·&nbsp; <a href="03-shadow-canary-or-all-at-once.html">Next: Shadow, canary, or all at once →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=2"></script>
+</body>
+</html>

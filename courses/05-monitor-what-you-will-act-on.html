@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 5 of 6. What can be watched before the labels arrive and what cannot, why every alert needs an action and an owner, and how a model that picks its own training data grades its own homework. An alert-to-action table for a system you own.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Monitor what you will act on - learn ml production with phoebe">
+<meta property="og:description" content="Session 5 of 6. Software, inputs and outputs are visible now; performance waits for the labels. Every alert gets an action, an owner and a price, and every feedback loop gets a held-out slice.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/courses/05-monitor-what-you-will-act-on.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Monitor what you will act on - learn ml production with phoebe">
+<meta name="twitter:description" content="Session 5 of 6. Signals, actions, owners, and the held-out slice that breaks a feedback loop.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-ml-production-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 5 · Monitor what you will act on - learn ml production with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-ml-production-with-phoebe</a> / Session 5 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ML in Production: The Leader Cut · Session 5 of 6</div>
+    <h1>Monitor what you will <span class="accent">act on</span></h1>
+    <p class="sub">Most monitoring is built the wrong way round. A team wires up every chart the platform offers, points alerts at a shared channel, and waits. Within a month the channel is muted, and the one alert that mattered arrives in a room nobody is in. Tonight starts from the other end: what could go wrong, what you would actually do about each thing, who does it, and what doing it costs. Then two facts that shape every monitor you build. Most of what you can watch arrives before the truth does, and a model that decides which cases get labelled can quietly teach itself to be wrong. You leave with an alert-to-action table for a system you own, with the rows that have no action already deleted.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Advanced</span>
+      <span class="chip audience">Leaders who own the pager budget</span>
+      <span class="chip audience">Builders who wire the alerts</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:5">3-18 · Signals, actions, loops</span>
+      <span class="a3" style="flex:7">18-40 · Build-along: the alert-to-action table</span>
+      <span class="a4" style="flex:2">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Session 4 priced a retrain and showed that an alarm is one of the cheapest ways to buy accuracy back. That alarm only works if three things are true: it watches something that moves when the model goes wrong, somebody acts when it fires, and the thing it watches is not being shaped by the model itself. Tonight is those three things in order. None of them is a dashboard question. Each is a decision about attention, which is the scarcest thing an operations team has.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = fill it in for your own system</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> An alert-to-action table for one real ML system: every signal with its threshold, its action, its owner and the cost of acting, the rows with no action struck out, and one guard against the model choosing its own labels. Plus the sentence that ends most monitoring debates: "if nobody would do anything when this fires, we are not going to page anyone about it."</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers what can be watched, and when</span>
+      <h2>Most of what you can watch arrives before the truth does</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">The decision first: which of the things you watch can tell you the model is wrong, and how late. A leader who does not ask gets a wall of green charts that are all measuring the plumbing. The mechanism is the label delay from session 4. Between the moment a prediction is served and the moment its true outcome lands, three layers of the system are already visible. The fourth, the one everyone actually cares about, is not.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A time rail from prediction served to label arrives, with the label delay between them in ochre. Four layers below. Software metrics, latency, throughput, memory and server load, are visible from the first prediction. The distribution of inputs is visible from the first prediction. The distribution of predictions is visible from the first prediction. Performance against labels is blank for the whole label delay and becomes visible only when the label arrives.">
+        <defs>
+          <filter id="s5aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="51" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5aH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s5aL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s5aS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s5aB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s5aA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s5aN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s5aH" x="30" y="26">WHAT YOU CAN SEE, AND WHEN: THREE LAYERS NOW, ONE AFTER THE LABEL DELAY</text>
+
+        <g filter="url(#s5aSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- the rail -->
+          <path d="M240 70 L846 70" stroke="#6A4B5C" marker-end="url(#s5aAr)"/>
+          <rect x="240" y="60" width="420" height="20" rx="3" transform="rotate(0.2 450 70)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <path d="M240 56 L240 262" stroke="#6A4B5C" stroke-width="1.5" stroke-dasharray="4 5"/>
+          <path d="M660 56 L660 262" stroke="#9A5B00" stroke-width="2.5" stroke-dasharray="4 5"/>
+          <!-- doodle anchor: a clock over the gap -->
+          <circle cx="560" cy="40" r="10" fill="#FFFFFF"/>
+          <path d="M560 40 L560 33 M560 40 L566 43" stroke-width="1.6"/>
+          <!-- layer 1-3: visible now -->
+          <rect x="240" y="106" width="600" height="30" rx="5" transform="rotate(-0.2 540 121)" fill="#FFFFFF"/>
+          <rect x="240" y="146" width="600" height="30" rx="5" transform="rotate(0.2 540 161)" fill="#FBEFF5"/>
+          <rect x="240" y="186" width="600" height="30" rx="5" transform="rotate(-0.2 540 201)" fill="#FFFFFF"/>
+          <!-- layer 4: blind, then visible -->
+          <rect x="240" y="226" width="420" height="30" rx="5" transform="rotate(0.2 450 241)" fill="#FFFFFF" stroke="#6A4B5C" stroke-dasharray="5 5"/>
+          <rect x="660" y="226" width="180" height="30" rx="5" transform="rotate(-0.4 750 241)" fill="#FBEFF5"/>
+        </g>
+
+        <text class="s5aL" x="240" y="48" text-anchor="middle">prediction served</text>
+        <text class="s5aL" x="660" y="48" text-anchor="middle">label arrives</text>
+        <text class="s5aB" x="420" y="74" text-anchor="middle">the label delay</text>
+        <text class="s5aA" x="252" y="100">visible from the first prediction</text>
+
+        <text class="s5aL" x="30" y="126">1 · software</text>
+        <text class="s5aL" x="30" y="166">2 · inputs</text>
+        <text class="s5aL" x="30" y="206">3 · outputs</text>
+        <text class="s5aL" x="30" y="246">4 · performance</text>
+
+        <text class="s5aL" x="252" y="126">latency, throughput, memory, server load</text>
+        <text class="s5aS" x="828" y="125" text-anchor="end">Monitor 6</text>
+        <text class="s5aL" x="252" y="166">distribution of each input x</text>
+        <text class="s5aS" x="828" y="165" text-anchor="end">Monitors 2, 3</text>
+        <text class="s5aL" x="252" y="206">distribution of the predictions</text>
+        <text class="s5aS" x="828" y="205" text-anchor="end">what the model says</text>
+        <text class="s5aS" x="252" y="245">blind for one label delay: nothing to score yet</text>
+        <text class="s5aL" x="750" y="246" text-anchor="middle">accuracy vs labels</text>
+
+        <text class="s5aN" x="30" y="282">Covariate shift shows in row 2 on day one. Concept drift, a change in P(Y|X), leaves rows 1 to 3 untouched.</text>
+        <text class="s5aN" x="30" y="300">It waits in row 4, one label delay behind. Monitor numbers are the ML Test Score's monitoring tests.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - three layers can alarm the day something breaks; the one that measures being wrong waits out the ochre gap</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Ng's method: start from what could go wrong<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Andrew Ng's Machine Learning in Production lectures teach monitoring as a brainstorm before it is a dashboard (reported, from compiled lecture notes). Sit down with the team and list everything that could go wrong. Then pick metrics in three families: <strong>software</strong> metrics such as memory, compute, latency, throughput and server load; <strong>input</strong> metrics that describe the distribution of what the model is fed; and <strong>output</strong> metrics that describe what the model returns. Set a threshold on each, and expect to adapt both the metrics and the thresholds over time as you learn which ones move when something real happens.</p>
+        <p>The last step is the one most teams skip. A threshold set on launch day is a guess. Treating it as permanent is how a channel fills with alerts nobody reads, and Part 2 is about pricing that.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>The seven monitoring tests in the ML Test Score<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Breck and colleagues give monitoring its own section of seven tests, scored like the other three: half a point by hand and documented, a full point automated. Session 1's constructed readiness sheet scored this section lowest, at 1.0 of 7, and that is the shape to check your own sheet against; the paper itself does not rank the sections by how often teams fail them.</p>
+        <table class="clean">
+          <tr><th>#</th><th>Monitoring test</th><th>Visible before labels?</th></tr>
+          <tr><td>1</td><td>Dependency changes result in notification</td><td>Yes</td></tr>
+          <tr><td>2</td><td>Data invariants hold for inputs</td><td>Yes</td></tr>
+          <tr><td>3</td><td>Training and serving are not skewed</td><td>Yes</td></tr>
+          <tr><td>4</td><td>Models are not too stale</td><td>Yes, as model age</td></tr>
+          <tr><td>5</td><td>Models are numerically stable</td><td>Yes</td></tr>
+          <tr><td>6</td><td>Computing performance has not regressed</td><td>Yes</td></tr>
+          <tr><td>7</td><td>Prediction quality has not regressed</td><td>No: it needs labels</td></tr>
+        </table>
+        <p>Six of seven can alarm on the day something breaks. Only the seventh measures the thing the business pays for, and it is the one that runs a label delay behind.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Three kinds of shift, and which one an input monitor can see<span class="mini">1 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Chip Huyen's blog post on data distribution shifts gives the cleanest definitions (read, blog). <strong>Covariate shift</strong>: P(X) changes while P(Y|X) stays the same; the inputs move, the rule linking them to the outcome does not. <strong>Label shift</strong>: P(Y) changes while P(X|Y) stays the same; the mix of outcomes moves. <strong>Concept drift</strong>: P(Y|X) changes while P(X) stays the same; the same inputs now mean a different outcome.</p>
+        <p>Ng's lectures use a simpler pair (reported): <strong>data drift</strong> when the distribution of x changes, <strong>concept drift</strong> when the mapping from x to y changes. He uses the two words loosely at times, so when a team says "drift", ask which one they mean.</p>
+        <p>The practical consequence is in the figure. An input monitor sees covariate shift, because it is by definition a change in the inputs. It cannot see concept drift, because the inputs have not moved: the only place concept drift shows up is performance against labels, after the labels land. Label shift sits between them; the output distribution may hint at it, but confirming it takes labels too.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Where the statistics and the pipeline monitors live<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>This session decides what to watch and why. How to measure a distribution change, which statistic, which test, which window, is taught in <a href="https://phoebefu6.github.io/learn-model-evaluation-with-phoebe/courses/b9-drift-continuous-eval.html">Model Evaluation b9, drift and continuous evaluation ↗</a>. Monitors on the pipeline feeding the model, freshness, volume and schema, are taught in <a href="https://phoebefu6.github.io/learn-data-observability-with-phoebe/courses/a2-five-signals.html">Data Observability a2, the five signals ↗</a>. Both plug into the input row of the figure; neither changes the rule that performance waits for labels.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Thirty-six Google teams, and the test they skipped.</strong> When Breck and colleagues met 36 teams across Google, none of the 28 tests was implemented by more than 80 percent of them. The one they single out as "perhaps the most important and least implemented" is a monitoring test: training and serving are not skewed. It needs no labels at all; it compares the features the model sees live with the features it was trained on. The decision a leader signs here: before any accuracy dashboard is funded, the three rows that need no labels are live, and the team can say out loud how long row four is blind.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers alert-to-action</span>
+      <h2>An alert without an action is noise</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">The decision first: for every alert, what happens when it fires, and who does it. If the honest answer is "someone looks at it", the alert is a chart with a sound attached. The mechanism is a chain of four links: a signal, a threshold on it, an action the threshold triggers, and a person who owns the action. Break any link and the alert still fires; it just stops meaning anything.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mapping from signal to threshold to action to owner, four rows. Serving latency over budget pages the on-call engineer, who rolls back as in session 3. The share of a feature missing jumps: block the retrain and open a ticket with the upstream data owner. The prediction distribution shifts: the model owner reviews and shadows a refit. Accuracy on labelled rows falls 10 points over four weeks: the model owner refits on all history, session 4's alarm policy. A fifth row in red: a metric with no threshold, no action and no owner. Delete it.">
+        <defs>
+          <filter id="s5bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="53" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5bH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s5bL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s5bS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s5bB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s5bA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s5bR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s5bN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s5bH" x="30" y="26">EVERY ALERT IS A CHAIN OF FOUR LINKS (CONSTRUCTED THRESHOLDS)</text>
+
+        <g filter="url(#s5bSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- header arrows -->
+          <path d="M92 48 L256 48" stroke="#A23B72" stroke-width="1.6" marker-end="url(#s5bAr)"/>
+          <path d="M338 48 L452 48" stroke="#A23B72" stroke-width="1.6" marker-end="url(#s5bAr)"/>
+          <path d="M514 48 L706 48" stroke="#A23B72" stroke-width="1.6" marker-end="url(#s5bAr)"/>
+          <!-- doodle anchor: a bell -->
+          <path d="M836 44 C836 34 848 34 848 44 L850 52 L834 52 Z" fill="#FFFFFF" stroke-width="1.6"/>
+          <path d="M840 56 L844 56" stroke-width="1.6"/>
+          <!-- row 1 -->
+          <rect x="30" y="70" width="220" height="40" rx="6" transform="rotate(-0.4 140 90)" fill="#FFFFFF"/>
+          <rect x="265" y="70" width="180" height="40" rx="6" transform="rotate(0.5 355 90)" fill="#FFFFFF"/>
+          <rect x="460" y="70" width="240" height="40" rx="6" transform="rotate(-0.3 580 90)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="715" y="70" width="135" height="40" rx="6" transform="rotate(0.6 782 90)" fill="#FBEFF5"/>
+          <!-- row 2 -->
+          <rect x="30" y="120" width="220" height="40" rx="6" transform="rotate(0.4 140 140)" fill="#FFFFFF"/>
+          <rect x="265" y="120" width="180" height="40" rx="6" transform="rotate(-0.5 355 140)" fill="#FFFFFF"/>
+          <rect x="460" y="120" width="240" height="40" rx="6" transform="rotate(0.3 580 140)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="715" y="120" width="135" height="40" rx="6" transform="rotate(-0.6 782 140)" fill="#FBEFF5"/>
+          <!-- row 3 -->
+          <rect x="30" y="170" width="220" height="40" rx="6" transform="rotate(-0.3 140 190)" fill="#FFFFFF"/>
+          <rect x="265" y="170" width="180" height="40" rx="6" transform="rotate(0.4 355 190)" fill="#FFFFFF"/>
+          <rect x="460" y="170" width="240" height="40" rx="6" transform="rotate(-0.4 580 190)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="715" y="170" width="135" height="40" rx="6" transform="rotate(0.5 782 190)" fill="#FBEFF5"/>
+          <!-- row 4 -->
+          <rect x="30" y="220" width="220" height="40" rx="6" transform="rotate(0.3 140 240)" fill="#FFFFFF"/>
+          <rect x="265" y="220" width="180" height="40" rx="6" transform="rotate(-0.4 355 240)" fill="#FFFFFF"/>
+          <rect x="460" y="220" width="240" height="40" rx="6" transform="rotate(0.4 580 240)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <rect x="715" y="220" width="135" height="40" rx="6" transform="rotate(-0.5 782 240)" fill="#FBEFF5"/>
+          <!-- row 5: the wrong way -->
+          <rect x="30" y="270" width="820" height="40" rx="6" transform="rotate(-0.2 440 290)" fill="#FEF2F2" stroke="#991B1B"/>
+          <path d="M252 290 L262 290 M447 290 L457 290 M702 290 L712 290" stroke="#FCA5A5"/>
+        </g>
+
+        <text class="s5bA" x="30" y="52">SIGNAL</text>
+        <text class="s5bA" x="265" y="52">THRESHOLD</text>
+        <text class="s5bB" x="460" y="52">ACTION</text>
+        <text class="s5bA" x="715" y="52">OWNER</text>
+
+        <text class="s5bL" x="42" y="95">Serving latency</text>
+        <text class="s5bS" x="277" y="94">over budget for 15 min</text>
+        <text class="s5bL" x="472" y="87">Page on-call, roll back</text>
+        <text class="s5bS" x="472" y="103">session 3's rollback</text>
+        <text class="s5bL" x="727" y="95">On-call</text>
+
+        <text class="s5bL" x="42" y="145">Share of a feature missing</text>
+        <text class="s5bS" x="277" y="144">jumps vs last month</text>
+        <text class="s5bL" x="472" y="137">Block retrain, ticket upstream</text>
+        <text class="s5bS" x="472" y="153">the fix is not in the model</text>
+        <text class="s5bL" x="727" y="145">Data owner</text>
+
+        <text class="s5bL" x="42" y="195">Prediction distribution</text>
+        <text class="s5bS" x="277" y="194">shifts vs launch week</text>
+        <text class="s5bL" x="472" y="187">Review, shadow a refit</text>
+        <text class="s5bS" x="472" y="203">session 3's shadow mode</text>
+        <text class="s5bL" x="727" y="195">Model owner</text>
+
+        <text class="s5bL" x="42" y="245">Accuracy, labelled rows</text>
+        <text class="s5bS" x="277" y="244">falls 10 pts over 4 wks</text>
+        <text class="s5bL" x="472" y="237">Refit on all history</text>
+        <text class="s5bS" x="472" y="253">session 4's alarm policy</text>
+        <text class="s5bL" x="727" y="245">Model owner</text>
+
+        <text class="s5bR" x="42" y="294">A chart someone liked</text>
+        <text class="s5bR" x="277" y="294">none written</text>
+        <text class="s5bR" x="472" y="294">none: an alert with no action</text>
+        <text class="s5bR" x="727" y="294">delete it</text>
+
+        <text class="s5bN" x="30" y="334">Thresholds are constructed for the figure. The ochre column is the one that makes an alert worth its page.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - read each row right to left: if the action or the owner is blank, the signal on the left is noise</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Sculley: what to monitor, and three places to look<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>In the section of the hidden-technical-debt paper on changes in the external world, Sculley and colleagues write: "Comprehensive live monitoring of system behavior in real time combined with automated response is critical for long-term system reliability." Then: "The key question is: what to monitor?" They name three starting points (read).</p>
+        <ul>
+          <li><strong>Prediction bias.</strong> In a system working as intended, the distribution of predicted labels should match the distribution of observed labels. A change there is a cheap, early sign that the world has moved. It is not a sufficient test: a null model that predicts the average label for everything passes it perfectly. Slice it by segment and it becomes much sharper.</li>
+          <li><strong>Action limits.</strong> Where the system takes actions in the world, bidding, approving, blocking, set limits on those actions as a sanity check, and alert when one is hit. The limit is a floor under a model going wrong fast.</li>
+          <li><strong>Up-stream producers.</strong> Data flowing in from other teams' systems should be monitored against its own expectations, and those producers' alerts should reach the team that consumes the data. Session 1's unstable data dependencies, made operational.</li>
+        </ul>
+        <p>Note the word "automated response". The paper pairs monitoring with action from its first sentence on the subject.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>An alert threshold is a spending decision: the bench shows it<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Session 4's bench already priced this, on real Elec2 rows at a one-day label delay. The alarm policy that refits when four-week accuracy on labelled rows falls 10 points below where it started retrains 6 times and scores 72.78 percent. Now make it a hair trigger: fire on any dip at all, watching only the last day. It retrains 209 times and scores 72.79 percent.</p>
+        <table class="clean">
+          <tr><th>Alarm</th><th>Retrains</th><th>Accuracy</th><th>Correct rows</th></tr>
+          <tr><td>10 points, 4-week window</td><td>6</td><td>72.78</td><td>10,666</td></tr>
+          <tr><td>Any dip at all, 1-day window</td><td>209</td><td>72.79</td><td>10,668</td></tr>
+        </table>
+        <p>The extra 203 retrains buy 2 correct rows out of 14,656. Every one of those retrains is an alert somebody acted on. A threshold decides how often the team is interrupted and how much compute is spent, long before it decides accuracy.</p>
+        <p><strong>Reproduce it.</strong> Open <a href="04-the-retrain-policy-bench.html">session 4's bench</a>, keep labels at 1 day and refits on all labelled history, then set Retrain to "on an alarm", Alarm when accuracy falls to "any dip at all", and Alarm watches to "1 day". Compare it with the same alarm at "10 points" and "4 weeks".</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Zinkevich Rule 10: watch for silent failures<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Martin Zinkevich's Rules of Machine Learning give this failure its own rule, "Watch for silent failures." (read). His examples are the kind no latency chart will ever catch. A feature column that was populated in 90 percent of examples drops to 60 percent, and the model keeps serving, slightly worse, with nothing crashing. A table behind Google Play went stale for 6 months; refreshing it gave "a boost of 2% in install rate".</p>
+        <p>Both are row 2 of Part 1's figure: an input-side signal, visible without a single label, that nobody was watching. And both have an obvious action: find the upstream owner and fix the feed, which is exactly the second row of the alert chain above.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Alert hygiene for the pipeline itself<span class="mini">1 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The same discipline, applied to data pipelines rather than models, is taught in <a href="https://phoebefu6.github.io/learn-data-observability-with-phoebe/courses/a4-alert-or-noise.html">Data Observability a4, alert or noise ↗</a>: how to count alerts per week, how to tell a noisy check from a broken one, and when to retire a check. The rule carries over unchanged: a check that never leads to an action is costing attention and buying nothing.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Elec2's constant columns (self-study).</strong> The electricity file used on session 4's bench looks clean. Its ARFF header records a ReplaceMissingValues filter, and three inputs, Victoria's price, Victoria's demand and the transfer between states, are constant for the first 17,424 rows, 363 days: their values were missing and filled in before the file was published (measured). A monitor on "share of constant values per input" would have flagged three of the five market inputs the bench uses from day one, with a clear action attached: ask the producer what happened before the model learns a year of nothing. The decision a leader signs here: every alert on the list names its action and its owner, and any that cannot is removed before launch, not after the channel is muted.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers feedback loops</span>
+      <h2>When the model grades its own homework</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">The decision first: how much of your traffic is decided without the model, so you can still learn what the model gets wrong. Without that slice, a model that chooses which cases get acted on also chooses which cases get labelled, and every retrain learns only from the cases it already liked. The monitor looks healthy because it is measured on the same selected cases. Here is the mechanism, drawn for a lending model.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A loop. The model scores applicants. Its score drives an action in the world: approve or decline. Declined cases never show their outcome. Only approved cases produce labels, repaid or defaulted. Those labels become the next training set, which trains the next model. An ochre held-out slice, a small random share decided without the model, sends labels the model did not pick into the training set and breaks the loop.">
+        <defs>
+          <filter id="s5cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="57" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5cH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s5cL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s5cS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s5cB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s5cV { font: 800 14px Inter, sans-serif; fill: #6B2049; }
+          .s5cA { font: 700 11px Inter, sans-serif; fill: #A23B72; }
+          .s5cN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s5cH" x="30" y="26">A DIRECT FEEDBACK LOOP, AND THE SLICE THAT BREAKS IT (CONSTRUCTED LENDING EXAMPLE)</text>
+
+        <g filter="url(#s5cSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- nodes -->
+          <rect x="40" y="130" width="150" height="56" rx="10" transform="rotate(-1 115 158)" fill="#FBEFF5"/>
+          <rect x="280" y="56" width="230" height="56" rx="10" transform="rotate(0.6 395 84)" fill="#FFFFFF"/>
+          <rect x="620" y="130" width="220" height="56" rx="10" transform="rotate(-0.6 730 158)" fill="#FFFFFF"/>
+          <rect x="280" y="210" width="230" height="56" rx="10" transform="rotate(0.5 395 238)" fill="url(#s5cHc)"/>
+          <rect x="620" y="240" width="220" height="60" rx="10" transform="rotate(-0.8 730 270)" fill="#FDF1DE" stroke="#9A5B00"/>
+          <!-- the loop -->
+          <path d="M115 128 C125 92 190 84 274 84" marker-end="url(#s5cAr)"/>
+          <path d="M512 88 C610 90 710 96 724 126" marker-end="url(#s5cAr)"/>
+          <path d="M660 190 C640 220 570 228 516 234" marker-end="url(#s5cAr)"/>
+          <path d="M278 242 C200 246 130 232 116 192" marker-end="url(#s5cAr)"/>
+          <!-- declined: a dead end -->
+          <path d="M512 70 L526 64" stroke="#6A4B5C" stroke-dasharray="3 4"/>
+          <!-- the guard -->
+          <path d="M618 272 C580 270 550 262 516 256" stroke="#9A5B00" stroke-width="2.5" marker-end="url(#s5cAr)"/>
+          <!-- doodle anchor: a small circular arrow in the middle of the loop -->
+          <path d="M392 138 C380 138 380 152 392 152 C404 152 404 140 396 138" stroke="#A23B72" stroke-width="1.6" marker-end="url(#s5cAr)"/>
+        </g>
+
+        <text class="s5cV" x="115" y="156" text-anchor="middle">Model</text>
+        <text class="s5cS" x="115" y="174" text-anchor="middle">scores applicants</text>
+        <text class="s5cL" x="395" y="81" text-anchor="middle">Action in the world</text>
+        <text class="s5cS" x="395" y="98" text-anchor="middle">approve or decline</text>
+        <text class="s5cS" x="532" y="62">declined: outcome never seen</text>
+        <text class="s5cL" x="730" y="155" text-anchor="middle">Labels arrive</text>
+        <text class="s5cS" x="730" y="172" text-anchor="middle">only for approved cases</text>
+        <text class="s5cH" x="395" y="236" text-anchor="middle">Next training set</text>
+        <text class="s5cS" x="395" y="254" text-anchor="middle">built from those labels only</text>
+        <text class="s5cB" x="730" y="262" text-anchor="middle">Held-out slice</text>
+        <text class="s5cS" x="730" y="278" text-anchor="middle">a small random share</text>
+        <text class="s5cS" x="730" y="292" text-anchor="middle">decided without the model</text>
+        <text class="s5cA" x="400" y="176" text-anchor="middle">the model picks its own next labels</text>
+        <text class="s5cB" x="606" y="294" text-anchor="end">labels it did not pick</text>
+
+        <text class="s5cN" x="30" y="324">The slice's size is a business choice, constructed here: it costs some decisions made without the model.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the hachured box learns only from cases the model chose; the ochre slice is the only view of the cases it turned away</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Sculley: direct and hidden feedback loops<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The hidden-technical-debt paper separates two kinds (read). A <strong>direct feedback loop</strong>: "A model may directly influence the selection of its own future training data." That is the figure: the approvals decide the labels. A <strong>hidden feedback loop</strong> is harder to find, because it runs between systems: "two systems influence each other indirectly through the world." Two models owned by two teams, each changing the behaviour the other learns from, with neither team's monitor built to see the other.</p>
+        <p>Neither loop crashes anything. Both can make every monitor in Part 1 look better while the model gets worse on the cases it no longer sees.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Huyen: degenerate loops and feedback loop length<span class="mini">1 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Chip Huyen names the failure a <strong>degenerate feedback loop</strong>: "a system's outputs are used to create or process the same system's inputs" (read, blog). Recommenders are the familiar case; lending, fraud and hiring screens are the expensive ones.</p>
+        <p>She also names the dial that sets how fast any loop can be caught: <strong>feedback loop length</strong>, the time from serving a prediction to getting feedback on it. It is session 4's label delay under another name. For fraud she gives a dispute window of "a month to three months" (read, blog). Her book, Designing Machine Learning Systems, covers the same ground at more depth; its text was not read for this session, so nothing here is quoted from it.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Three guards against a model picking its own labels<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <ul>
+          <li><strong>A held-out slice.</strong> A small random share of cases is decided without the model, by the old rule or at random within safe limits, and its outcomes are labelled like any other. It costs some worse decisions; it buys the only unbiased view of what the model turns away. Its size is a business choice, and the table in the build-along gives it a row.</li>
+          <li><strong>Log what the model did not choose.</strong> Store the score and the decision for every case, including the declined ones. You cannot learn their outcomes, but you can see when the share being declined moves, which is an output-row signal from Part 1.</li>
+          <li><strong>Measure the label delay,</strong> as session 4's homework asked. The loop length tells you how far behind the performance row is, and therefore how long a loop can run before any accuracy alarm could notice.</li>
+        </ul>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The fraud model's alarm is always looking at last quarter.</strong> Huyen's fraud dispute window, a month to three months, is a label delay. A fraud model's accuracy alarm can only score transactions whose disputes have had time to arrive, so on any given morning it is grading the model that was running up to three months ago. Every row of the alert table that depends on labels inherits that lag. The decision a leader signs here: the size of the held-out slice, and who owns it, written down before the model's first retrain, because the loop starts closing on day one and the labels that would reveal it are months behind.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>The alert-to-action table</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Pick one ML system you own or are about to approve. If you have none, use the Elec2 price-direction model from session 4; the figure fills its table as a constructed worked example. Six steps, each a block you copy into a document and fill in. The table is finished when every surviving row has an action, an owner and a price, and one row guards against the model choosing its own labels.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The alert-to-action table as a grid with five columns, signal, threshold, action, owner and cost of acting, filled for the Elec2 price model as a constructed example. Serving latency over budget for 15 minutes: roll back, on-call, minutes. Victoria inputs constant for a day: block the retrain and ticket the producer, upstream owner, one ticket. Accuracy on labelled rows falls 10 points over 4 weeks: refit on all history, model owner, 500 dollars a refit. A fourth row, daily UP share, with no threshold, action or owner, is struck through and deleted.">
+        <defs>
+          <filter id="s5dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="59" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5dHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#A23B72" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2A1621" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5dH { font: 800 12px Inter, sans-serif; fill: #2A1621; }
+          .s5dL { font: 600 12px Inter, sans-serif; fill: #2A1621; }
+          .s5dS { font: 400 11px Inter, sans-serif; fill: #6A4B5C; }
+          .s5dB { font: 800 11px Inter, sans-serif; fill: #6E4000; }
+          .s5dR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s5dN { font: 400 12px Inter, sans-serif; fill: #6A4B5C; }
+        </style>
+
+        <text class="s5dH" x="30" y="26">THE TABLE, FILLED FOR THE ELEC2 PRICE MODEL (CONSTRUCTED WORKED EXAMPLE)</text>
+
+        <g filter="url(#s5dSk)" fill="none" stroke="#2A1621" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- header band -->
+          <rect x="30" y="40" width="820" height="32" rx="4" transform="rotate(-0.2 440 56)" fill="#FBEFF5"/>
+          <!-- the action column, the thing the table is about -->
+          <rect x="370" y="72" width="190" height="108" fill="#FDF1DE" stroke="#9A5B00"/>
+          <!-- struck row -->
+          <rect x="30" y="180" width="820" height="36" fill="#FEF2F2" stroke="#991B1B"/>
+          <!-- outer grid -->
+          <rect x="30" y="40" width="820" height="176" rx="4" transform="rotate(0.2 440 128)"/>
+          <path d="M210 40 L210 216 M370 40 L370 216 M560 40 L560 216 M690 40 L690 216" stroke-width="1.5"/>
+          <path d="M30 72 L850 72 M30 108 L850 108 M30 144 L850 144 M30 180 L850 180" stroke-width="1.5"/>
+          <!-- the strike, and the doodle anchor: a pencil at its end -->
+          <path d="M40 199 L826 197" stroke="#991B1B" stroke-width="2.5"/>
+          <path d="M830 192 L846 184 L850 190 L834 199 Z" fill="#FFFFFF" stroke="#991B1B" stroke-width="1.6"/>
+        </g>
+
+        <text class="s5dH" x="42" y="61">Signal</text>
+        <text class="s5dH" x="222" y="61">Threshold</text>
+        <text class="s5dB" x="382" y="61">Action</text>
+        <text class="s5dH" x="572" y="61">Owner</text>
+        <text class="s5dH" x="702" y="61">Cost of acting</text>
+
+        <text class="s5dS" x="42" y="94">Serving latency</text>
+        <text class="s5dS" x="222" y="94">over budget 15 min</text>
+        <text class="s5dL" x="382" y="94">roll back</text>
+        <text class="s5dS" x="572" y="94">on-call</text>
+        <text class="s5dS" x="702" y="94">minutes of traffic</text>
+
+        <text class="s5dS" x="42" y="130">Victoria inputs constant</text>
+        <text class="s5dS" x="222" y="130">any input flat 1 day</text>
+        <text class="s5dL" x="382" y="130">block retrain, ticket</text>
+        <text class="s5dS" x="572" y="130">upstream owner</text>
+        <text class="s5dS" x="702" y="130">one ticket, no refit</text>
+
+        <text class="s5dS" x="42" y="166">Accuracy, labelled rows</text>
+        <text class="s5dS" x="222" y="166">falls 10 pts, 4 wks</text>
+        <text class="s5dL" x="382" y="166">refit on all history</text>
+        <text class="s5dS" x="572" y="166">model owner</text>
+        <text class="s5dS" x="702" y="166">$500 a refit (s4)</text>
+
+        <text class="s5dR" x="42" y="203">Daily UP share</text>
+        <text class="s5dR" x="222" y="203">none</text>
+        <text class="s5dR" x="382" y="203">none</text>
+        <text class="s5dR" x="572" y="203">nobody</text>
+        <text class="s5dR" x="702" y="203">deleted</text>
+
+        <text class="s5dN" x="30" y="240">The last row had no action, so it was struck before launch. The $500 is session 4's constructed default.</text>
+        <text class="s5dN" x="30" y="258">Every row here is constructed for teaching: your numbers will differ.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - a row earns its place by the ochre column; the struck row is the most useful edit on the page</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Brainstorm what could go wrong, before any metric.</strong> Ng's order: the failures first, grouped by where they would show. Ten minutes, with the people who run the system. Write failures, not charts.</p>
+        <div class="prompt-box good"><span class="label">★ Block 1 · what could go wrong</span>System: ____________________________
+
+Software (it is slow, down, or out of memory):
+  - ________________________________
+  - ________________________________
+Inputs (what it is fed has changed or broken):
+  - ________________________________   (e.g. "a feed goes flat for a day")
+  - ________________________________
+Outputs (what it says has changed):
+  - ________________________________   (e.g. "share approved jumps")
+Performance (it is wrong more often):
+  - ________________________________</div>
+      </div>
+      <div class="step">
+        <p><strong>Give each failure a signal and say when it becomes visible.</strong> "Now" means on the first affected prediction. "After the label delay" means performance: write the delay in hours or days, measured, not guessed.</p>
+        <div class="prompt-box good"><span class="label">★ Block 2 · signal and when you can see it</span>Failure                     Signal                         Visible
+__________________________  _____________________________  now / after ____ delay
+__________________________  _____________________________  now / after ____ delay
+__________________________  _____________________________  now / after ____ delay
+__________________________  _____________________________  now / after ____ delay
+
+Our label delay (median / 90th percentile): ______ / ______</div>
+      </div>
+      <div class="step">
+        <p><strong>Set a threshold, and decide now how you will know it is too tight.</strong> The honest test is a count: alerts per month, and how many led to an action. Session 4's hair-trigger alarm acted 209 times to buy what 6 actions bought.</p>
+        <div class="prompt-box good"><span class="label">★ Block 3 · threshold and its own check</span>Signal: ______________________
+Threshold: ___________________  over window: ________
+Expected alerts per month: ____
+Too tight if: more than ____ alerts a month, or fewer than ____ % lead to an action
+Review this threshold on: ________  (Ng: thresholds adapt over time)</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the action, the owner and the cost of acting.</strong> An owner is a person who gets woken up, not a team channel. The cost can be minutes of traffic, an engineer's afternoon, or a retrain priced as in session 4.</p>
+        <div class="prompt-box good"><span class="label">★ Block 4 · action, owner, cost</span>Signal          Action when it fires             Owner         Cost of acting
+_____________   ______________________________   ___________   ______________
+_____________   ______________________________   ___________   ______________
+_____________   ______________________________   ___________   ______________
+_____________   ______________________________   ___________   ______________
+
+Retrain cost we use: $______ per retrain  (session 4 default: $500, constructed)</div>
+      </div>
+      <div class="step">
+        <p><strong>Delete every row with no action.</strong> Strike it through, keep it on the page for one review so the team sees what was cut, then remove it from the alerting system. A chart can stay on a dashboard; it does not get to page anyone.</p>
+        <div class="prompt-box good"><span class="label">★ Block 5 · the deletions</span>Rows struck (no action, or no owner):
+  - ____________________   reason: ____________________
+  - ____________________   reason: ____________________
+Rows left: ____   Alerts per month expected from them: ____</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the feedback-loop guard.</strong> Does the model decide which cases get labelled? If yes, name the held-out slice: its share, how cases enter it, what it costs, and who owns it. If no, write why, in one sentence.</p>
+        <div class="prompt-box good"><span class="label">★ Block 6 · the feedback-loop guard</span>Does the model choose which cases get a label?  yes / no
+If yes, held-out slice:
+  Share of cases decided without the model: ____ %
+  How a case enters the slice: _________________  (random, not chosen)
+  What the slice costs per month: ______________
+  Owner: ______________
+We log score and decision for every case, including declined: yes / no
+Other systems our outputs feed (hidden loops): ______________</div>
+      </div>
+    </div>
+
+    <div class="wyb">
+      <span class="wyb-pill">What you would build</span>
+      <p>Keep the table as data next to the model's code, so it is reviewed like code and no alert exists that is not in it. And compute accuracy only on rows whose labels have actually arrived, or the performance row will quietly score predictions against labels that were not there yet.</p>
+      <div class="prompt-box good"><span class="label">★ monitor_spec.py</span>from datetime import datetime, timedelta
+
+MONITORS = [   # constructed example; every row must have an action and an owner
+    {"signal": "p99_latency_ms", "window": "15min",   "threshold": "&gt; budget",
+     "action": "roll back",               "owner": "on-call"},
+    {"signal": "share_constant_input", "window": "1d", "threshold": "&gt; 0",
+     "action": "block retrain, ticket",   "owner": "upstream owner"},
+    {"signal": "accuracy_labelled", "window": "28d",  "threshold": "drop &gt;= 10 pts",
+     "action": "refit on all history",    "owner": "model owner"},
+]
+assert all(m["action"] and m["owner"] for m in MONITORS), "no action, no alert"
+
+
+def rolling_accuracy(preds, labels, label_arrival_time, now, window: timedelta):
+    """Accuracy over the window, counting only rows whose label has arrived by now."""
+    hits = total = 0
+    for p, y, t in zip(preds, labels, label_arrival_time):
+        if t is None or t &gt; now or t &lt; now - window:
+            continue   # label not in yet, or outside the window
+        total += 1
+        hits += int(p == y)
+    return hits / total if total else None   # None: nothing to score yet
+
+# your numbers will differ</div>
+      <p>The dashboards that display these, the routing that pages the owner, and the scheduled jobs that run them are built in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b6-model-deploy-monitor.html">DataOps b6, deploy and monitor ↗</a>. The statistics for the input and output rows are in <a href="https://phoebefu6.github.io/learn-model-evaluation-with-phoebe/courses/b9-drift-continuous-eval.html">Model Evaluation b9 ↗</a>. Governance of ongoing monitoring, who reviews the table and how often, is in <a href="https://phoebefu6.github.io/learn-model-risk-with-phoebe/courses/p8-ongoing-monitoring.html">Model Risk p8, ongoing monitoring ↗</a>.</p>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Count before you tune.</strong> Before arguing about any threshold, pull last month's alerts and mark each one "acted on" or "not". The ratio is the fastest honest review of a monitoring system there is, and it usually settles the argument on its own.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 6</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Write the brainstorm for one live model</strong> with the people who run it, grouped into software, inputs, outputs and performance. Mark each item "now" or "after the label delay".</li>
+      <li><strong>Fill the table and delete the rows with no action.</strong> Keep the struck rows visible for one review so the team sees what was cut and why.</li>
+      <li><strong>Count last month's alerts</strong> and how many of them led to an action. Write both numbers at the top of the table. If the second is much smaller than the first, you have found your first thresholds to change.</li>
+      <li><strong>Find one feedback loop and write its guard.</strong> A place where the model's decisions choose which outcomes you ever see. Name the held-out slice, its size, and its owner, or write why none is needed.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 5 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · Which kind of shift can an input monitor NOT see before the labels arrive?</p>
+      <button class="qopt" type="button">A · Covariate shift, because P(X) changes</button>
+      <button class="qopt" type="button">B · A latency regression, because it is a software metric</button>
+      <button class="qopt" type="button">C · Concept drift: P(Y|X) changes while the inputs look the same, so it only shows up in performance against labels</button>
+      <button class="qopt" type="button">D · A feature column dropping from 90 to 60 percent populated</button>
+      <p class="qwhy">Covariate shift and a feature going missing are changes in the inputs, visible on day one. Concept drift leaves the inputs alone and changes what they mean, so it waits in the performance row, one label delay behind.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">2 · On session 4's bench at a one-day label delay, what did the hair-trigger alarm (any dip at all, watching 1 day) buy over the 10-point, 4-week alarm?</p>
+      <button class="qopt" type="button">A · About 4 accuracy points, for roughly twice the retrains</button>
+      <button class="qopt" type="button">B · Nothing at all: both scored exactly 72.78 percent with 6 retrains</button>
+      <button class="qopt" type="button">C · A loss of accuracy, because frequent retrains always overfit</button>
+      <button class="qopt" type="button">D · 2 correct rows for 203 more retrains: 72.79 percent with 209 retrains, against 72.78 percent with 6</button>
+      <p class="qwhy">10,668 correct rows against 10,666. An alert threshold decides how often somebody acts, and each action has a price. That is why a threshold is a spending decision before it is an accuracy decision.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="1">
+      <p class="qtext">3 · A lending model decides which applications are approved, and only approved loans ever produce a repaid-or-defaulted label. Why does it need a held-out slice?</p>
+      <button class="qopt" type="button">A · Because regulators require a fixed 10 percent random slice for every model</button>
+      <button class="qopt" type="button">B · Because the model selects its own future training data: without cases decided without it, every retrain learns only from applicants it already approved, and no monitor can see what it turns away</button>
+      <button class="qopt" type="button">C · Because a held-out slice makes the label delay shorter</button>
+      <button class="qopt" type="button">D · Because it removes the need for any accuracy monitor</button>
+      <p class="qwhy">This is Sculley's direct feedback loop and Huyen's degenerate loop. The slice is the only source of labels the model did not choose; its size is a business decision, not a fixed rule.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Ng, Machine Learning in Production, week 1: monitoring</span><span class="note">Course page read; lecture content reported from compiled lecture notes: brainstorm what could go wrong, software, input and output metrics, thresholds that adapt, data drift and concept drift. Videos and certificate stay official</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Breck et al. 2017, The ML Test Score: the monitoring section</span><span class="note">Read at source: the seven monitoring tests, the scoring rule, the 36 teams, the 80 percent finding and the training/serving skew test</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Sculley et al. 2015, Section 7 and feedback loops</span><span class="note">Read at source: the monitoring passage, prediction bias (a null model can pass it), action limits, up-stream producers, direct and hidden feedback loops</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Zinkevich, Rules of Machine Learning, Rule 10</span><span class="note">Read at source: "Watch for silent failures", the 90 to 60 percent column, the Play table stale for 6 months and the 2% install-rate boost</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Huyen, blog posts on distribution shifts and real-time ML</span><span class="note">Read: covariate shift, label shift, concept drift, degenerate feedback loops, feedback loop length, the fraud dispute window. Her book was not read; nothing here is quoted from it</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Elec2 and session 4's bench</span><span class="note">Measured: the constant Victoria inputs for 17,424 rows, and the two alarm runs quoted from the bench canon</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Drift statistics</span><span class="note">Named only; taught in <a href="https://phoebefu6.github.io/learn-model-evaluation-with-phoebe/courses/b9-drift-continuous-eval.html">Model Evaluation b9 ↗</a></span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Pipeline monitors and alert hygiene</span><span class="note">Named only; taught in <a href="https://phoebefu6.github.io/learn-data-observability-with-phoebe/courses/a2-five-signals.html">Data Observability a2 ↗</a> and <a href="https://phoebefu6.github.io/learn-data-observability-with-phoebe/courses/a4-alert-or-noise.html">a4 ↗</a></span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">The alert tables and thresholds</span><span class="note">Constructed for the figures and the worked example, and labelled so</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 5 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Three layers now</b><span>Software, inputs and outputs are visible from the first prediction.</span></div>
+      <div class="cheat-item"><b>Performance waits</b><span>Accuracy against labels is blind for one label delay. Measure the delay.</span></div>
+      <div class="cheat-item"><b>Action and owner, or delete it</b><span>Every alert names what happens when it fires and the person who does it.</span></div>
+      <div class="cheat-item"><b>A threshold is a spending decision</b><span>On the bench, 203 extra retrains bought 2 correct rows: 72.79 vs 72.78.</span></div>
+      <div class="cheat-item"><b>Concept drift hides</b><span>P(Y|X) changes while the inputs look the same. Only labels reveal it.</span></div>
+      <div class="cheat-item"><b>Hold out a slice</b><span>If the model decides who gets labelled, a random share decided without it keeps it honest.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>Session 6 asks the question every earlier session made possible: should this model be running at all? The failure-rate folklore traced back to what its sources actually say, the kill criteria a leader can sign in advance, and the capstone one-page production decision memo. Bring the alert table; its deleted rows and its blind spots are evidence.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 5 of 6 · learn-ml-production-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="04-the-retrain-policy-bench.html">← Prev: The retrain-policy bench</a> &nbsp;·&nbsp; <a href="06-when-not-to-productionize.html">Next: When not to productionize →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=2"></script>
+</body>
+</html>
